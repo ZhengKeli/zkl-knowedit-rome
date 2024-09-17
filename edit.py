@@ -4,7 +4,7 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 from zkl_serialization import load_and_parse_json
 
 from rome import ROMEHyperParams, apply_rome_to_model
-from util.generate import generate_fast
+from rome.utils.generate import generate_fast
 
 model_name = "gpt2-medium"
 hparams_file_path = os.path.join("hparams/ROME/gpt2-medium.json")

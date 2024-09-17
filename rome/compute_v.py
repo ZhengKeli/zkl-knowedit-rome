@@ -2,8 +2,8 @@ import numpy as np
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
-from rome import repr_tools
-from util import nethook
+from . import repr_tools
+from .utils import nethook
 from .hparams import ROMEHyperParams
 
 

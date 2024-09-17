@@ -1,7 +1,7 @@
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
-from rome import repr_tools
+from . import repr_tools
 from .layer_stats import layer_stats
 from .hparams import ROMEHyperParams
 

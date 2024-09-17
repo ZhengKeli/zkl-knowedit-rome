@@ -3,10 +3,10 @@ from copy import deepcopy
 import torch
 from transformers import PreTrainedModel, PreTrainedTokenizer
 
-from rome import ROMEHyperParams
-from rome.compute_u import compute_u
-from rome.compute_v import compute_v
-from rome.prefixes import get_context_templates
+from .hparams import ROMEHyperParams
+from .compute_u import compute_u
+from .compute_v import compute_v
+from .prefixes import get_context_templates
 
 
 def execute_rome(

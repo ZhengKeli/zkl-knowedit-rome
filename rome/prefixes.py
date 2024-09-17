@@ -1,4 +1,4 @@
-from util.generate import generate_fast
+from .utils.generate import generate_fast
 
 CONTEXT_TEMPLATES_CACHE = None
 

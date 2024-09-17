@@ -4,7 +4,7 @@ from typing import Optional
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
-from .nethook import get_module, TraceDict
+from rome.utils.nethook import get_module, TraceDict
 
 
 class LogitLens:

@@ -1,7 +1,7 @@
 import torch
 from transformers import PreTrainedModel, PreTrainedTokenizer
 
-from util import nethook
+from .utils import nethook
 from .compute_uv import execute_rome
 from .hparams import ROMEHyperParams
 
