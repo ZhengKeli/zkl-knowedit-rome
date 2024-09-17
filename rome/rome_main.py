@@ -27,9 +27,8 @@ def apply_rome_to_model(
         (delta_u, delta_v) = execute_rome(model, tok, request, hparams, stats_dir)
 
         with torch.no_grad():
-            upd_matrix = delta_u.unsqueeze(1) @ delta_v.unsqueeze(0)
-            upd_matrix = upd_matrix_match_shape(upd_matrix, weight.shape)
-            weight[...] += upd_matrix
+            delta_weight = delta_u.unsqueeze(1) @ delta_v.unsqueeze(0)
+            weight[...] += delta_weight
 
 
 def execute_rome(
@@ -73,23 +72,6 @@ def execute_rome(
     print("Right vector shape:", right_vector.shape)
 
     return left_vector, right_vector
-
-
-def upd_matrix_match_shape(matrix: torch.Tensor, shape: torch.Size) -> torch.Tensor:
-    """
-    GPT-2 and GPT-J have transposed weight representations.
-    Returns a matrix that matches the desired shape, else raises a ValueError
-    """
-
-    if matrix.shape == shape:
-        return matrix
-    elif matrix.T.shape == shape:
-        return matrix.T
-    else:
-        raise ValueError(
-            "Update matrix computed by ROME does not match original weight shape. "
-            "Check for bugs in the code?"
-        )
 
 
 def get_context_templates(model, tok, length_params):
