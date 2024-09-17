@@ -27,7 +27,7 @@ def apply_rome_to_model(
         (delta_u, delta_v) = execute_rome(model, tok, request, hparams, stats_dir)
 
         with torch.no_grad():
-            delta_weight = delta_u.unsqueeze(1) @ delta_v.unsqueeze(0)
+            delta_weight = torch.outer(delta_u, delta_v)
             weight[...] += delta_weight
 
 
