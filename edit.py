@@ -40,7 +40,7 @@ pre_update_text = generate_fast(model, tokenizer, generation_prompts, max_out_le
 print(pre_update_text)
 
 print(f"Applying ROME to model")
-model, _ = apply_rome_to_model(model, tokenizer, requests, hparams)
+apply_rome_to_model(model, tokenizer, requests, hparams)
 
 print("Generating post-update text")
 post_update_text = generate_fast(model, tokenizer, generation_prompts, max_out_len=100)

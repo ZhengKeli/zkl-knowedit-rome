@@ -2,7 +2,7 @@ from copy import deepcopy
 from typing import Dict, List, Tuple
 
 import torch
-from transformers import AutoModelForCausalLM, PreTrainedModel, PreTrainedTokenizer
+from transformers import PreTrainedModel, PreTrainedTokenizer
 
 from util import nethook
 from util.generate import generate_fast
@@ -20,7 +20,7 @@ def apply_rome_to_model(
     hparams: ROMEHyperParams,
     copy=False,
     return_orig_weights=False,
-) -> Tuple[AutoModelForCausalLM, List[str]]:
+):
     """
     Returns a model with the desired changes.
 
@@ -51,8 +51,6 @@ def apply_rome_to_model(
                 w[...] += upd_matrix
 
         print(f"New weights successfully inserted into {list(deltas.keys())}")
-
-    return model, weights_copy
 
 
 def execute_rome(
