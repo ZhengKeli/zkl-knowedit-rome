@@ -15,12 +15,6 @@ def execute_rome(
     hparams: ROMEHyperParams,
     stats_dir: str,
 ) -> tuple[torch.Tensor, torch.Tensor]:
-    request = {
-        'prompt': request.prompt[:request.subject_head] + "{}" + request.prompt[request.subject_tail:],
-        'subject': request.subject,
-        'target_new': {"str": request.target},
-    }
-
     # prefixes
     context_templates = get_context_templates(model, tok, hparams.context_template_length_params)
 
@@ -35,6 +29,12 @@ def execute_rome(
         stats_dir,
     )
     print("Left vector shape:", left_vector.shape)
+
+    request = {
+        'prompt': request.prompt[:request.subject_head] + "{}" + request.prompt[request.subject_tail:],
+        'subject': request.subject,
+        'target_new': {"str": request.target},
+    }
 
     right_vector: torch.Tensor = compute_v(
         model,

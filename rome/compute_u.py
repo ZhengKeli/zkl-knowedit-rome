@@ -4,12 +4,13 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 from . import repr_tools
 from .compute_c import get_inv_cov
 from .hparams import ROMEHyperParams
+from .request import TextRomeRequest
 
 
 def compute_u(
     model: AutoModelForCausalLM,
     tok: AutoTokenizer,
-    request: dict,
+    request: TextRomeRequest,
     hparams: ROMEHyperParams,
     layer: int,
     context_templates: list[str],
@@ -21,6 +22,9 @@ def compute_u(
 
     print("Computing left vector (u)...")
 
+    subject = request.subject
+    prompt_temp = request.prompt[:request.subject_head] + "{}" + request.prompt[request.subject_tail:]
+
     # Compute projection token
     word_repr_args = dict(
         model=model,
@@ -29,13 +33,10 @@ def compute_u(
         module_template=hparams.rewrite_module_tmp,
         track="in",
     )
-    word = request["subject"]
-    print(f"Selected u projection object {word}")
+
     cur_repr = repr_tools.get_reprs_at_word_tokens(
-        context_templates=[
-            templ.format(request["prompt"]) for templ in context_templates
-        ],
-        words=[word for _ in range(len(context_templates))],
+        context_templates=[templ.format(prompt_temp) for templ in context_templates],
+        words=[subject for _ in range(len(context_templates))],
         subtoken="last",
         **word_repr_args,
     ).mean(0)
