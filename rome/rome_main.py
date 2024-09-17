@@ -7,7 +7,7 @@ from util import nethook
 from util.generate import generate_fast
 from .compute_u import compute_u
 from .compute_v import compute_v
-from .rome_hparams import ROMEHyperParams
+from .hparams import ROMEHyperParams
 
 CONTEXT_TEMPLATES_CACHE = None
 

@@ -4,7 +4,7 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 
 from rome import repr_tools
 from util import nethook
-from .rome_hparams import ROMEHyperParams
+from .hparams import ROMEHyperParams
 
 
 def compute_v(

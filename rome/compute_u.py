@@ -3,7 +3,7 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 
 from rome import repr_tools
 from .layer_stats import layer_stats
-from .rome_hparams import ROMEHyperParams
+from .hparams import ROMEHyperParams
 
 # Cache variables
 inv_mom2_cache = {}
