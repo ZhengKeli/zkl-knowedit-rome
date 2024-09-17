@@ -1,11 +1,9 @@
 from dataclasses import dataclass
 from typing import List
 
-from util.hparams import HyperParams
-
 
 @dataclass
-class ROMEHyperParams(HyperParams):
+class ROMEHyperParams:
     # Method
     layers: List[int]
     fact_token: str
