@@ -47,6 +47,9 @@ def execute_rome(
         f"[{request['prompt'].format(request['subject'])}] -> [{request['target_new']['str']}]"
     )
 
+    # prefixes
+    context_templates = get_context_templates(model, tok, hparams.context_template_length_params)
+
     # Compute rank-1 update matrix
     left_vector: torch.Tensor = compute_u(
         model,
@@ -54,7 +57,7 @@ def execute_rome(
         request,
         hparams,
         hparams.layer,
-        get_context_templates(model, tok, hparams.context_template_length_params),
+        context_templates,
         stats_dir,
     )
     print("Left vector shape:", left_vector.shape)
@@ -66,7 +69,7 @@ def execute_rome(
         hparams,
         hparams.layer,
         left_vector,
-        get_context_templates(model, tok, hparams.context_template_length_params),
+        context_templates,
     )
     print("Right vector shape:", right_vector.shape)
 
