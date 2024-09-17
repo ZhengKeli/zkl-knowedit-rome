@@ -3,72 +3,21 @@ from pathlib import Path
 import torch
 from datasets import load_dataset
 from tqdm.auto import tqdm
-from transformers import AutoModelForCausalLM, AutoTokenizer
 
-from .utils.nethook import Trace, set_requires_grad
-from .utils.runningstats import CombinedStat, Mean, NormMean, SecondMoment, tally
 from .tok_dataset import (
     TokenizedDataset,
     dict_to_,
     flatten_masked_batch,
     length_collation,
 )
+from .utils.nethook import Trace
+from .utils.runningstats import CombinedStat, Mean, NormMean, SecondMoment, tally
 
 STAT_TYPES = {
     "mom2": SecondMoment,
     "mean": Mean,
     "norm_mean": NormMean,
 }
-
-
-def main():
-    """
-    Command-line utility to precompute cached stats.
-    """
-    import argparse
-
-    parser = argparse.ArgumentParser(description="ROME Statistics Collector")
-
-    def aa(*args, **kwargs):
-        parser.add_argument(*args, **kwargs)
-
-    aa("--model_name", default="gpt2-xl", choices=["gpt2-xl", "EleutherAI/gpt-j-6B"])
-    aa("--dataset", default="wikipedia", choices=["wikitext", "wikipedia"])
-    aa("--layers", default=[17], type=lambda x: list(map(int, x.split(","))))
-    aa("--to_collect", default=["mom2"], type=lambda x: x.split(","))
-    aa("--sample_size", default=100000, type=lambda x: None if x == "all" else int(x))
-    aa("--batch_tokens", default=None, type=lambda x: None if x == "any" else int(x))
-    aa("--precision", default="float32", choices=["float64", "float32", "float16"])
-    aa("--stats_dir", default=None)
-    aa("--download", default=1, type=int, choices=[0, 1])
-    args = parser.parse_args()
-
-    tokenizer = AutoTokenizer.from_pretrained(args.model_name)
-    model = AutoModelForCausalLM.from_pretrained(args.model_name).eval().cuda()
-    set_requires_grad(False, model)
-
-    for layer_num in args.layers:
-        print(
-            f"Computing stats for layer {layer_num} of {args.model_name} "
-            f'over {args.sample_size or "all"} samples of {args.dataset}. '
-            "Note, the statistics are collected over the inputs to the second MLP layer, "
-            "or equivalently the outputs of the first MLP layer."
-        )
-        proj_layer_name = "c_proj" if "gpt2" in args.model_name else "fc_out"
-        layer_name = f"transformer.h.{layer_num}.mlp.{proj_layer_name}"
-
-        layer_stats(
-            model,
-            tokenizer,
-            layer_name,
-            args.stats_dir,
-            args.dataset,
-            args.to_collect,
-            sample_size=args.sample_size,
-            precision=args.precision,
-            batch_tokens=args.batch_tokens,
-            download=args.download,
-        )
 
 
 def layer_stats(
@@ -147,7 +96,3 @@ def layer_stats(
                 feats = feats.to(dtype=dtype)
                 stat.add(feats)
     return stat
-
-
-if __name__ == "__main__":
-    main()
