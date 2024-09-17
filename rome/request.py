@@ -49,3 +49,7 @@ class TextRomeRequest:
     @property
     def subject(self) -> str:
         return self.prompt[self.subject_head:self.subject_tail]
+
+    @property
+    def prompt_template(self) -> str:
+        return self.prompt[:self.subject_head] + "{}" + self.prompt[self.subject_tail:]
