@@ -5,7 +5,6 @@ from dataclasses import dataclass
 class ROMEHyperParams:
     # Method
     layer: int
-    fact_token: str
     v_num_grad_steps: int
     v_lr: float
     v_loss_layer: int

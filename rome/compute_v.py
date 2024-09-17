@@ -51,9 +51,7 @@ def compute_v(
 
     # Compute indices of the tokens where the fact is looked up
     lookup_idxs = [
-        find_fact_lookup_idx(
-            prompt, request["subject"], tok, hparams.fact_token, verbose=(i == 0)
-        )
+        find_fact_lookup_idx(prompt, request["subject"], tok, verbose=(i == 0))
         for i, prompt in enumerate(all_prompts)
     ]
 
@@ -170,7 +168,6 @@ def compute_v(
         context_template=request["prompt"],
         word=request["subject"],
         module_template=hparams.rewrite_module_tmp,
-        fact_token_strategy=hparams.fact_token,
     )
 
     # Solving the linear system to compute the right vector
@@ -192,7 +189,6 @@ def get_module_input_output_at_word(
     context_template: str,
     word: str,
     module_template: str,
-    fact_token_strategy: str,
 ) -> tuple[torch.Tensor]:
     """
     Retrieves detached representations for a word at the input and
@@ -205,24 +201,13 @@ def get_module_input_output_at_word(
         layer=layer,
         module_template=module_template,
     )
-    if "subject_" in fact_token_strategy and fact_token_strategy.index("subject_") == 0:
-        subtoken = fact_token_strategy[len("subject_"):]
-        l_input, l_output = repr_tools.get_reprs_at_word_tokens(
-            track="both",
-            subtoken=subtoken,
-            context_templates=[context_template],
-            words=[word],
-            **word_repr_args,
-        )
-    elif fact_token_strategy == "last":
-        l_input, l_output = repr_tools.get_reprs_at_idxs(
-            track="both",
-            contexts=[context_template.format(word)],
-            idxs=[[-1]],
-            **word_repr_args,
-        )
-    else:
-        raise ValueError(f"fact_token={fact_token_strategy} not recognized")
+    l_input, l_output = repr_tools.get_reprs_at_word_tokens(
+        track="both",
+        subtoken="last",
+        context_templates=[context_template],
+        words=[word],
+        **word_repr_args,
+    )
 
     l_input, l_output = l_input[0], l_output[0]
     return l_input.detach(), l_output.detach()
@@ -232,27 +217,18 @@ def find_fact_lookup_idx(
     prompt: str,
     subject: str,
     tok: AutoTokenizer,
-    fact_token_strategy: str,
     verbose=True,
 ) -> int:
     """
     Computes hypothesized fact lookup index given a sentence and subject.
     """
 
-    ret = None
-    if fact_token_strategy == "last":
-        ret = -1
-    elif (
-        "subject_" in fact_token_strategy and fact_token_strategy.index("subject_") == 0
-    ):
-        ret = repr_tools.get_words_idxs_in_templates(
-            tok=tok,
-            context_templates=[prompt],
-            words=[subject],
-            subtoken=fact_token_strategy[len("subject_"):],
-        )[0][0]
-    else:
-        raise ValueError(f"fact_token={fact_token_strategy} not recognized")
+    ret = repr_tools.get_words_idxs_in_templates(
+        tok=tok,
+        context_templates=[prompt],
+        words=[subject],
+        subtoken="last",
+    )[0][0]
 
     sentence = prompt.format(subject)
     if verbose:
