@@ -1,5 +1,4 @@
 from copy import deepcopy
-from typing import Dict, List, Tuple
 
 import torch
 from transformers import PreTrainedModel, PreTrainedTokenizer
@@ -16,7 +15,7 @@ CONTEXT_TEMPLATES_CACHE = None
 def apply_rome_to_model(
     model: PreTrainedModel,
     tok: PreTrainedTokenizer,
-    requests: List[Dict],
+    requests: list[dict],
     hparams: ROMEHyperParams,
     stats_dir: str,
 ):
@@ -34,7 +33,7 @@ def apply_rome_to_model(
 def execute_rome(
     model: PreTrainedModel,
     tok: PreTrainedTokenizer,
-    request: Dict,
+    request: dict,
     hparams: ROMEHyperParams,
     stats_dir: str,
 ) -> tuple[torch.Tensor, torch.Tensor]:

@@ -1,5 +1,5 @@
 from collections import defaultdict
-from typing import Dict, Optional
+from typing import Optional
 
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
@@ -38,7 +38,7 @@ class LogitLens:
             nethook.get_module(model, ln_f_module),
         )
 
-        self.output: Optional[Dict] = None
+        self.output: Optional[dict] = None
         self.td: Optional[nethook.TraceDict] = None
         self.trace_layers = [
             layer_module_tmp.format(layer) for layer in range(self.n_layers)

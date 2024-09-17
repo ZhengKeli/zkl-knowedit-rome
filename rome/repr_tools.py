@@ -1,10 +1,4 @@
-"""
-Contains utilities for extracting token representations and indices
-from string templates. Used in computing the left and right vectors for ROME.
-"""
-
 from copy import deepcopy
-from typing import List
 
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
@@ -15,8 +9,8 @@ from util import nethook
 def get_reprs_at_word_tokens(
     model: AutoModelForCausalLM,
     tok: AutoTokenizer,
-    context_templates: List[str],
-    words: List[str],
+    context_templates: list[str],
+    words: list[str],
     layer: int,
     module_template: str,
     subtoken: str,
@@ -57,7 +51,7 @@ def get_words_idxs_in_templates(
     fill_idxs = [tmp.index("{}") for tmp in context_templates]
     prefixes, suffixes = [
         tmp[: fill_idxs[i]] for i, tmp in enumerate(context_templates)
-    ], [tmp[fill_idxs[i] + 2 :] for i, tmp in enumerate(context_templates)]
+    ], [tmp[fill_idxs[i] + 2:] for i, tmp in enumerate(context_templates)]
     words = deepcopy(words)
 
     # Pre-process tokens
@@ -74,7 +68,7 @@ def get_words_idxs_in_templates(
     n = len(prefixes)
     batch_tok = tok([*prefixes, *words, *suffixes])
     prefixes_tok, words_tok, suffixes_tok = [
-        batch_tok[i : i + n] for i in range(0, n * 3, n)
+        batch_tok[i: i + n] for i in range(0, n * 3, n)
     ]
     prefixes_len, words_len, suffixes_len = [
         [len(el) for el in tok_list]
@@ -102,8 +96,8 @@ def get_words_idxs_in_templates(
 def get_reprs_at_idxs(
     model: AutoModelForCausalLM,
     tok: AutoTokenizer,
-    contexts: List[str],
-    idxs: List[List[int]],
+    contexts: list[str],
+    idxs: list[list[int]],
     layer: int,
     module_template: str,
     track: str = "in",
@@ -115,7 +109,7 @@ def get_reprs_at_idxs(
 
     def _batch(n):
         for i in range(0, len(contexts), n):
-            yield contexts[i : i + n], idxs[i : i + n]
+            yield contexts[i: i + n], idxs[i: i + n]
 
     assert track in {"in", "out", "both"}
     both = track == "both"

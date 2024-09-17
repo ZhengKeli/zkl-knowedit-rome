@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-from typing import List
 
 
 @dataclass
@@ -14,7 +13,7 @@ class ROMEHyperParams:
     clamp_norm_factor: float
     kl_factor: float
     mom2_adjustment: bool
-    context_template_length_params: List[List[int]]
+    context_template_length_params: list[list[int]]
 
     # Module templates
     rewrite_module_tmp: str

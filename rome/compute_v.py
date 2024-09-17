@@ -1,24 +1,20 @@
-from typing import Dict, List, Tuple
-
 import numpy as np
 import torch
-from matplotlib.style import context
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
 from rome import repr_tools
 from util import nethook
-
 from .rome_hparams import ROMEHyperParams
 
 
 def compute_v(
     model: AutoModelForCausalLM,
     tok: AutoTokenizer,
-    request: Dict,
+    request: dict,
     hparams: ROMEHyperParams,
     layer: int,
     left_vector: torch.Tensor,
-    context_templates: List[str],
+    context_templates: list[str],
 ) -> torch.Tensor:
     """
     Computes the value (right) vector for the rank-1 update.
@@ -51,7 +47,7 @@ def compute_v(
     )
     for i in range(len(rewriting_prompts)):
         ex_len = input_tok["attention_mask"][i].sum()
-        rewriting_targets[i, ex_len - len(target_ids) : ex_len] = target_ids
+        rewriting_targets[i, ex_len - len(target_ids): ex_len] = target_ids
 
     # Compute indices of the tokens where the fact is looked up
     lookup_idxs = [
@@ -113,7 +109,7 @@ def compute_v(
             kl_logits = torch.stack(
                 [
                     logits[i - len(kl_prompts), idx, :]
-                    for i, idx in enumerate(lookup_idxs[-len(kl_prompts) :])
+                    for i, idx in enumerate(lookup_idxs[-len(kl_prompts):])
                 ],
                 dim=0,
             )
@@ -197,7 +193,7 @@ def get_module_input_output_at_word(
     word: str,
     module_template: str,
     fact_token_strategy: str,
-) -> Tuple[torch.Tensor]:
+) -> tuple[torch.Tensor]:
     """
     Retrieves detached representations for a word at the input and
     output of a particular layer module.
@@ -210,7 +206,7 @@ def get_module_input_output_at_word(
         module_template=module_template,
     )
     if "subject_" in fact_token_strategy and fact_token_strategy.index("subject_") == 0:
-        subtoken = fact_token_strategy[len("subject_") :]
+        subtoken = fact_token_strategy[len("subject_"):]
         l_input, l_output = repr_tools.get_reprs_at_word_tokens(
             track="both",
             subtoken=subtoken,
@@ -253,7 +249,7 @@ def find_fact_lookup_idx(
             tok=tok,
             context_templates=[prompt],
             words=[subject],
-            subtoken=fact_token_strategy[len("subject_") :],
+            subtoken=fact_token_strategy[len("subject_"):],
         )[0][0]
     else:
         raise ValueError(f"fact_token={fact_token_strategy} not recognized")

@@ -1,5 +1,5 @@
 import unicodedata
-from typing import List, Optional
+from typing import Optional
 
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
@@ -77,7 +77,7 @@ def generate_interactive(
 def generate_fast(
     model: AutoModelForCausalLM,
     tok: AutoTokenizer,
-    prompts: List[str],
+    prompts: list[str],
     n_gen_per_prompt: int = 1,
     top_k: int = 5,
     max_out_len: int = 200,
