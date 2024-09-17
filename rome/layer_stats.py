@@ -1,4 +1,3 @@
-import os
 from pathlib import Path
 
 import torch
@@ -6,10 +5,8 @@ from datasets import load_dataset
 from tqdm.auto import tqdm
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
-from util.globals import *
 from util.nethook import Trace, set_requires_grad
 from util.runningstats import CombinedStat, Mean, NormMean, SecondMoment, tally
-
 from .tok_dataset import (
     TokenizedDataset,
     dict_to_,
@@ -42,7 +39,7 @@ def main():
     aa("--sample_size", default=100000, type=lambda x: None if x == "all" else int(x))
     aa("--batch_tokens", default=None, type=lambda x: None if x == "any" else int(x))
     aa("--precision", default="float32", choices=["float64", "float32", "float16"])
-    aa("--stats_dir", default=STATS_DIR)
+    aa("--stats_dir", default=None)
     aa("--download", default=1, type=int, choices=[0, 1])
     args = parser.parse_args()
 
@@ -72,6 +69,9 @@ def main():
             batch_tokens=args.batch_tokens,
             download=args.download,
         )
+
+
+REMOTE_ROOT_URL = "https://rome.baulab.info"
 
 
 def layer_stats(

@@ -1,13 +1,9 @@
-import os
-from pathlib import Path
 from typing import Dict, List
 
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
 from rome import repr_tools
-from util.globals import *
-
 from .layer_stats import layer_stats
 from .rome_hparams import ROMEHyperParams
 
@@ -22,6 +18,7 @@ def get_inv_cov(
     mom2_dataset: str,
     mom2_n_samples: str,
     mom2_dtype: str,
+    stats_dir: str,
 ) -> torch.Tensor:
     """
     Retrieves covariance statistics, then computes the algebraic inverse.
@@ -42,7 +39,7 @@ def get_inv_cov(
             model,
             tok,
             layer_name,
-            STATS_DIR,
+            stats_dir,
             mom2_dataset,
             to_collect=["mom2"],
             sample_size=mom2_n_samples,
@@ -62,6 +59,7 @@ def compute_u(
     hparams: ROMEHyperParams,
     layer: int,
     context_templates: List[str],
+    stats_dir: str,
 ) -> torch.Tensor:
     """
     Computes the right vector used in constructing the rank-1 update matrix.
@@ -85,7 +83,7 @@ def compute_u(
                 templ.format(request["prompt"]) for templ in context_templates
             ],
             words=[word for _ in range(len(context_templates))],
-            subtoken=hparams.fact_token[len("subject_") :],
+            subtoken=hparams.fact_token[len("subject_"):],
             **word_repr_args,
         ).mean(0)
     elif hparams.fact_token == "last":
@@ -114,6 +112,7 @@ def compute_u(
             hparams.mom2_dataset,
             hparams.mom2_n_samples,
             hparams.mom2_dtype,
+            stats_dir
         ) @ u.unsqueeze(1)
         u = u.squeeze()
 

@@ -18,6 +18,7 @@ def apply_rome_to_model(
     tok: PreTrainedTokenizer,
     requests: List[Dict],
     hparams: ROMEHyperParams,
+    stats_dir: str,
 ):
     """
     Returns a model with the desired changes.
@@ -28,7 +29,7 @@ def apply_rome_to_model(
     :return: (1) the updated model, (2) an original copy of the weights that changed
     """
     for i, request in enumerate(requests):
-        deltas = execute_rome(model, tok, request, hparams)
+        deltas = execute_rome(model, tok, request, hparams, stats_dir)
 
         with torch.no_grad():
             for w_name, (delta_u, delta_v) in deltas.items():
@@ -45,6 +46,7 @@ def execute_rome(
     tok: PreTrainedTokenizer,
     request: Dict,
     hparams: ROMEHyperParams,
+    stats_dir: str,
 ) -> Dict[str, Tuple[torch.Tensor]]:
     """
     Executes the ROME update algorithm for the specified update at the specified layer
@@ -82,6 +84,7 @@ def execute_rome(
             hparams,
             layer,
             get_context_templates(model, tok, hparams.context_template_length_params),
+            stats_dir,
         )
         print("Left vector shape:", left_vector.shape)
         right_vector: torch.Tensor = compute_v(

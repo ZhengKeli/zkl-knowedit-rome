@@ -8,6 +8,7 @@ from util.generate import generate_fast
 
 model_name = "gpt2-medium"
 hparams_file_path = os.path.join("hparams/ROME/gpt2-medium.json")
+stats_dir = "data/stats"
 
 requests = [{
     'prompt': "{} was the founder of",
@@ -40,7 +41,7 @@ pre_update_text = generate_fast(model, tokenizer, generation_prompts, max_out_le
 print(pre_update_text)
 
 print(f"Applying ROME to model")
-apply_rome_to_model(model, tokenizer, requests, hparams)
+apply_rome_to_model(model, tokenizer, requests, hparams, stats_dir)
 
 print("Generating post-update text")
 post_update_text = generate_fast(model, tokenizer, generation_prompts, max_out_len=100)
