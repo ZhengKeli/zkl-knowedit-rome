@@ -13,7 +13,6 @@ def get_reprs_at_word_tokens(
     words: list[str],
     layer: int,
     module_template: str,
-    subtoken: str,
     track: str = "in",
 ) -> torch.Tensor:
     """
@@ -22,7 +21,7 @@ def get_reprs_at_word_tokens(
     for more details.
     """
 
-    idxs = get_words_idxs_in_templates(tok, context_templates, words, subtoken)
+    idxs = get_words_idxs_in_templates(tok, context_templates, words)
     return get_reprs_at_idxs(
         model,
         tok,
@@ -35,7 +34,7 @@ def get_reprs_at_word_tokens(
 
 
 def get_words_idxs_in_templates(
-    tok: AutoTokenizer, context_templates: str, words: str, subtoken: str
+    tok: AutoTokenizer, context_templates: str, words: str
 ) -> int:
     """
     Given list of template strings, each with *one* format specifier
@@ -76,21 +75,7 @@ def get_words_idxs_in_templates(
     ]
 
     # Compute indices of last tokens
-    if subtoken == "last" or subtoken == "first_after_last":
-        return [
-            [
-                prefixes_len[i]
-                + words_len[i]
-                - (1 if subtoken == "last" or suffixes_len[i] == 0 else 0)
-            ]
-            # If suffix is empty, there is no "first token after the last".
-            # So, just return the last token of the word.
-            for i in range(n)
-        ]
-    elif subtoken == "first":
-        return [[prefixes_len[i]] for i in range(n)]
-    else:
-        raise ValueError(f"Unknown subtoken type: {subtoken}")
+    return [[prefixes_len[i] + words_len[i] - 1] for i in range(n)]
 
 
 def get_reprs_at_idxs(

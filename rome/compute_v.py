@@ -202,7 +202,6 @@ def get_module_input_output_at_word(
     )
     l_input, l_output = repr_tools.get_reprs_at_word_tokens(
         track="both",
-        subtoken="last",
         context_templates=[context_template],
         words=[word],
         **word_repr_args,
@@ -226,7 +225,6 @@ def find_fact_lookup_idx(
         tok=tok,
         context_templates=[prompt],
         words=[subject],
-        subtoken="last",
     )[0][0]
 
     sentence = prompt.format(subject)
