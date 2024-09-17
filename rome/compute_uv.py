@@ -30,12 +30,6 @@ def execute_rome(
     )
     print("Left vector shape:", left_vector.shape)
 
-    request = {
-        'prompt': request.prompt[:request.subject_head] + "{}" + request.prompt[request.subject_tail:],
-        'subject': request.subject,
-        'target_new': {"str": request.target},
-    }
-
     right_vector: torch.Tensor = compute_v(
         model,
         tok,
