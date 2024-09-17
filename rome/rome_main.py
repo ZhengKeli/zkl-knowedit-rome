@@ -18,8 +18,6 @@ def apply_rome_to_model(
     tok: PreTrainedTokenizer,
     requests: List[Dict],
     hparams: ROMEHyperParams,
-    copy=False,
-    return_orig_weights=False,
 ):
     """
     Returns a model with the desired changes.
@@ -29,12 +27,6 @@ def apply_rome_to_model(
 
     :return: (1) the updated model, (2) an original copy of the weights that changed
     """
-
-    if copy:
-        model = deepcopy(model)
-
-    weights_copy = {}
-
     for i, request in enumerate(requests):
         deltas = execute_rome(model, tok, request, hparams)
 
@@ -43,11 +35,6 @@ def apply_rome_to_model(
                 upd_matrix = delta_u.unsqueeze(1) @ delta_v.unsqueeze(0)
                 w = nethook.get_parameter(model, w_name)
                 upd_matrix = upd_matrix_match_shape(upd_matrix, w.shape)
-
-                if return_orig_weights and w_name not in weights_copy:
-                    assert i == 0
-                    weights_copy[w_name] = w.detach().clone()
-
                 w[...] += upd_matrix
 
         print(f"New weights successfully inserted into {list(deltas.keys())}")
