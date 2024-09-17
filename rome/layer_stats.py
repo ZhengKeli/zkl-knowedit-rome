@@ -71,9 +71,6 @@ def main():
         )
 
 
-REMOTE_ROOT_URL = "https://rome.baulab.info"
-
-
 def layer_stats(
     model,
     tokenizer,
@@ -85,7 +82,6 @@ def layer_stats(
     sample_size=None,
     precision=None,
     batch_tokens=None,
-    download=True,
     progress=tqdm,
 ):
     """
@@ -119,18 +115,6 @@ def layer_stats(
     stats_dir = Path(stats_dir)
     file_extension = f"{model_name}/{ds_name}_stats/{layer_name}_{precision}_{'-'.join(sorted(to_collect))}{size_suffix}.npz"
     filename = stats_dir / file_extension
-
-    if not filename.exists() and download:
-        remote_url = f"{REMOTE_ROOT_URL}/data/stats/{file_extension}"
-        try:
-            print(f"Attempting to download {file_extension} from {remote_url}.")
-            (stats_dir / "/".join(file_extension.split("/")[:-1])).mkdir(
-                exist_ok=True, parents=True
-            )
-            torch.hub.download_url_to_file(remote_url, filename)
-            print("Successfully downloaded.")
-        except Exception as e:
-            print(f"Unable to download due to {e}. Computing locally....")
 
     ds = get_ds() if not filename.exists() else None
 
