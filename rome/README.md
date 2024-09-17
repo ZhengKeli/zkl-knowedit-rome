@@ -5,7 +5,7 @@ Recall that ROME's update consists of: $u$ selection, $v_*$ optimization, and $v
 * [`compute_u.py`](compute_u.py): Chooses a $u$ vector.
 * [`compute_v.py`](compute_v.py): Choose a $v_*$ via optimization, then computes $v$.
 * [`rome_main.py`](rome_main.py): Instruments main logic.
-* [`rome_params.py`](rome_hparams.py): Interface for specifying hyperparameters. Inherits from the base [`params.py`](../util/hparams.py) module.
+* [`rome_params.py`](rome_hparams.py): Interface for specifying hyperparameters.
 
 For estimating second moment statistics of keys ($C = KK$), we provide the `layer_stats` module. See the [main README](../README.md) for usage instructions.
 * [`layer_stats.py`](layer_stats.py): Logic for retrieving and caching key statistics.
