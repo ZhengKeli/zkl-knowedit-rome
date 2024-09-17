@@ -20,22 +20,16 @@ def apply_rome_to_model(
     hparams: ROMEHyperParams,
     stats_dir: str,
 ):
-    """
-    Returns a model with the desired changes.
-
-    :param copy: If true, will preserve the original model while creating a new one to edit.
-        Note that you are responsible for deallocating the new model's memory to avoid leaks.
-
-    :return: (1) the updated model, (2) an original copy of the weights that changed
-    """
     for i, request in enumerate(requests):
-        w_name, (delta_u, delta_v) = execute_rome(model, tok, request, hparams, stats_dir)
+        weight_name = f"{hparams.rewrite_module_tmp.format(hparams.layer)}.weight"
+        weight = nethook.get_parameter(model, weight_name)
+
+        (delta_u, delta_v) = execute_rome(model, tok, request, hparams, stats_dir)
 
         with torch.no_grad():
             upd_matrix = delta_u.unsqueeze(1) @ delta_v.unsqueeze(0)
-            w = nethook.get_parameter(model, w_name)
-            upd_matrix = upd_matrix_match_shape(upd_matrix, w.shape)
-            w[...] += upd_matrix
+            upd_matrix = upd_matrix_match_shape(upd_matrix, weight.shape)
+            weight[...] += upd_matrix
 
 
 def execute_rome(
@@ -44,12 +38,7 @@ def execute_rome(
     request: Dict,
     hparams: ROMEHyperParams,
     stats_dir: str,
-) -> tuple[str, tuple[torch.Tensor, torch.Tensor]]:
-    """
-    Executes the ROME update algorithm for the specified update at the specified layer
-    Invariant: model at beginning of function == model at end of function
-    """
-
+) -> tuple[torch.Tensor, torch.Tensor]:
     # Update target and print info
     request = deepcopy(request)
     if request["target_new"]["str"][0] != " ":
@@ -59,16 +48,6 @@ def execute_rome(
         f"Executing ROME algorithm for the update: "
         f"[{request['prompt'].format(request['subject'])}] -> [{request['target_new']['str']}]"
     )
-
-    # Retrieve weights that user desires to change
-    weights = {
-        f"{hparams.rewrite_module_tmp.format(layer)}.weight": nethook.get_parameter(
-            model, f"{hparams.rewrite_module_tmp.format(layer)}.weight"
-        )
-        for layer in [hparams.layer]
-    }
-    # Save old weights for future restoration
-    weights_copy = {k: v.detach().clone() for k, v in weights.items()}
 
     # Compute rank-1 update matrix
     left_vector: torch.Tensor = compute_u(
@@ -93,25 +72,7 @@ def execute_rome(
     )
     print("Right vector shape:", right_vector.shape)
 
-    with torch.no_grad():
-        # Determine correct transposition of delta matrix
-        weight_name = f"{hparams.rewrite_module_tmp.format(hparams.layer)}.weight"
-        upd_matrix = left_vector.unsqueeze(1) @ right_vector.unsqueeze(0)
-        upd_matrix = upd_matrix_match_shape(upd_matrix, weights[weight_name].shape)
-
-        # Update model weights and record desired changes in `delta` variable
-        weights[weight_name][...] += upd_matrix
-        left_vector = left_vector.detach()
-        right_vector = right_vector.detach()
-
-    # Restore state of original model
-    with torch.no_grad():
-        for k, v in weights.items():
-            v[...] = weights_copy[k]
-
-    print(f"Deltas successfully computed for {list(weights.keys())}")
-
-    return weight_name, (left_vector, right_vector)
+    return left_vector, right_vector
 
 
 def upd_matrix_match_shape(matrix: torch.Tensor, shape: torch.Size) -> torch.Tensor:
