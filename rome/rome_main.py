@@ -68,14 +68,14 @@ def execute_rome(
         f"{hparams.rewrite_module_tmp.format(layer)}.weight": nethook.get_parameter(
             model, f"{hparams.rewrite_module_tmp.format(layer)}.weight"
         )
-        for layer in hparams.layers
+        for layer in [hparams.layer]
     }
     # Save old weights for future restoration
     weights_copy = {k: v.detach().clone() for k, v in weights.items()}
 
     # Update loop: sequentially intervene at each specified layer
     deltas = {}
-    for layer in sorted(hparams.layers):
+    for layer in sorted([hparams.layer]):
         # Compute rank-1 update matrix
         left_vector: torch.Tensor = compute_u(
             model,

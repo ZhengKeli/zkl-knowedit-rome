@@ -5,7 +5,7 @@ from typing import List
 @dataclass
 class ROMEHyperParams:
     # Method
-    layers: List[int]
+    layer: int
     fact_token: str
     v_num_grad_steps: int
     v_lr: float
