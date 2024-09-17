@@ -6,7 +6,7 @@ from .layer_stats import layer_stats
 inv_mom2_cache = {}
 
 
-def get_inv_cov(
+def compute_c_inv(
     model: PreTrainedModel,
     tokenizer: PreTrainedTokenizer,
     layer_name: str,

@@ -2,7 +2,7 @@ import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
 from . import repr_tools
-from .compute_c import get_inv_cov
+from .compute_c import compute_c_inv
 from .hparams import ROMEHyperParams
 from .request import TextRomeRequest
 
@@ -43,7 +43,7 @@ def compute_u(
     # Apply inverse second moment adjustment
     u = cur_repr
     if hparams.mom2_adjustment:
-        c_inv = get_inv_cov(
+        c_inv = compute_c_inv(
             model,
             tok,
             hparams.rewrite_module_tmp.format(layer),
