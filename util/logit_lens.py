@@ -4,7 +4,7 @@ from typing import Dict, Optional
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
-from util import nethook
+from . import nethook
 
 
 class LogitLens:
