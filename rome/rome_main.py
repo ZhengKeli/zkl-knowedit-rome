@@ -2,11 +2,10 @@ from copy import deepcopy
 from typing import Dict, List, Tuple
 
 import torch
-from transformers import AutoModelForCausalLM, AutoTokenizer
+from transformers import AutoModelForCausalLM, PreTrainedModel, PreTrainedTokenizer
 
 from util import nethook
 from util.generate import generate_fast
-
 from .compute_u import compute_u
 from .compute_v import compute_v
 from .rome_hparams import ROMEHyperParams
@@ -15,8 +14,8 @@ CONTEXT_TEMPLATES_CACHE = None
 
 
 def apply_rome_to_model(
-    model: AutoModelForCausalLM,
-    tok: AutoTokenizer,
+    model: PreTrainedModel,
+    tok: PreTrainedTokenizer,
     requests: List[Dict],
     hparams: ROMEHyperParams,
     copy=False,
@@ -57,8 +56,8 @@ def apply_rome_to_model(
 
 
 def execute_rome(
-    model: AutoModelForCausalLM,
-    tok: AutoTokenizer,
+    model: PreTrainedModel,
+    tok: PreTrainedTokenizer,
     request: Dict,
     hparams: ROMEHyperParams,
 ) -> Dict[str, Tuple[torch.Tensor]]:
