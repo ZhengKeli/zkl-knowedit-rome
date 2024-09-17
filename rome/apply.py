@@ -1,6 +1,7 @@
 import torch
 from transformers import PreTrainedModel, PreTrainedTokenizer
 
+from .request import TextRomeRequest
 from .utils import nethook
 from .compute_uv import execute_rome
 from .hparams import ROMEHyperParams
@@ -9,7 +10,7 @@ from .hparams import ROMEHyperParams
 def apply_rome_to_model(
     model: PreTrainedModel,
     tok: PreTrainedTokenizer,
-    requests: list[dict],
+    requests: list[TextRomeRequest],
     hparams: ROMEHyperParams,
     stats_dir: str,
 ):

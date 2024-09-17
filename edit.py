@@ -3,18 +3,18 @@ import os
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from zkl_serialization import load_and_parse_json
 
-from rome import ROMEHyperParams, apply_rome_to_model
+from rome import ROMEHyperParams, apply_rome_to_model, TextRomeRequest
 from rome.utils.generate import generate_fast
 
 model_name = "gpt2-medium"
 hparams_file_path = os.path.join("hparams/ROME/gpt2-medium.json")
 stats_dir = "data/stats"
 
-requests = [{
-    'prompt': "{} was the founder of",
-    'subject': "Steve Jobs",
-    'target_new': {"str": "Microsoft"},
-}]
+requests = [TextRomeRequest(
+    prompt="Steve Jobs is the founder of ",
+    subject="Steve Jobs",
+    target="Microsoft"
+)]
 
 generation_prompts = [
     "My favorite Steve Jobs product is",

@@ -1,30 +1,25 @@
-from copy import deepcopy
-
 import torch
 from transformers import PreTrainedModel, PreTrainedTokenizer
 
-from .hparams import ROMEHyperParams
 from .compute_u import compute_u
 from .compute_v import compute_v
+from .hparams import ROMEHyperParams
 from .prefixes import get_context_templates
+from .request import TextRomeRequest
 
 
 def execute_rome(
     model: PreTrainedModel,
     tok: PreTrainedTokenizer,
-    request: dict,
+    request: TextRomeRequest,
     hparams: ROMEHyperParams,
     stats_dir: str,
 ) -> tuple[torch.Tensor, torch.Tensor]:
-    # Update target and print info
-    request = deepcopy(request)
-    if request["target_new"]["str"][0] != " ":
-        # Space required for correct tokenization
-        request["target_new"]["str"] = " " + request["target_new"]["str"]
-    print(
-        f"Executing ROME algorithm for the update: "
-        f"[{request['prompt'].format(request['subject'])}] -> [{request['target_new']['str']}]"
-    )
+    request = {
+        'prompt': request.prompt[:request.subject_head] + "{}" + request.prompt[request.subject_tail:],
+        'subject': request.subject,
+        'target_new': {"str": request.target},
+    }
 
     # prefixes
     context_templates = get_context_templates(model, tok, hparams.context_template_length_params)
