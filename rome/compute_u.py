@@ -43,15 +43,16 @@ def compute_u(
     # Apply inverse second moment adjustment
     u = cur_repr
     if hparams.mom2_adjustment:
-        u = get_inv_cov(
+        c_inv = get_inv_cov(
             model,
             tok,
             hparams.rewrite_module_tmp.format(layer),
             hparams.mom2_dataset,
             hparams.mom2_n_samples,
             hparams.mom2_dtype,
-            stats_dir
-        ) @ u.unsqueeze(1)
+            stats_dir)
+        c_inv = c_inv.to(u)
+        u = c_inv @ u.unsqueeze(1)
         u = u.squeeze()
 
     return u / u.norm()
