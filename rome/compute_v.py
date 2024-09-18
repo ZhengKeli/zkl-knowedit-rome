@@ -15,7 +15,7 @@ def compute_v(
     hparams: ROMEHyperParams,
     layer: int,
     left_vector: torch.Tensor,
-    context_templates: list[str],
+    prefixes: list[str],
 ) -> torch.Tensor:
     """
     Computes the value (right) vector for the rank-1 update.
@@ -29,8 +29,8 @@ def compute_v(
 
     # Compile list of rewriting and KL x/y pairs
     rewriting_prompts, kl_prompts = [
-        context.format(request.prompt_template) + tok.decode(target_ids[:-1])
-        for context in context_templates
+        prefix + request.prompt_template + tok.decode(target_ids[:-1])
+        for prefix in prefixes
     ], ["{} is a"]
     all_prompts = rewriting_prompts + kl_prompts
 
@@ -164,7 +164,7 @@ def compute_v(
         model,
         tok,
         layer,
-        context_template=request.prompt_template,
+        input=request.prompt_template,
         word=request.subject,
         module_template=hparams.rewrite_module_tmp,
     )
@@ -185,7 +185,7 @@ def get_module_input_output_at_word(
     model: AutoModelForCausalLM,
     tok: AutoTokenizer,
     layer: int,
-    context_template: str,
+    input: str,
     word: str,
     module_template: str,
 ) -> tuple[torch.Tensor]:
@@ -202,7 +202,7 @@ def get_module_input_output_at_word(
     )
     l_input, l_output = repr_tools.get_reprs_at_word_tokens(
         track="both",
-        context_templates=[context_template],
+        inputs=[input],
         words=[word],
         **word_repr_args,
     )
@@ -223,7 +223,7 @@ def find_fact_lookup_idx(
 
     ret = repr_tools.get_words_idxs_in_templates(
         tok=tok,
-        context_templates=[prompt],
+        input=[prompt],
         words=[subject],
     )[0][0]
 

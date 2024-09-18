@@ -13,7 +13,7 @@ def compute_u(
     request: TextRomeRequest,
     hparams: ROMEHyperParams,
     layer: int,
-    context_templates: list[str],
+    prefixes: list[str],
     stats_dir: str,
 ) -> torch.Tensor:
     u = compute_k(
@@ -22,7 +22,7 @@ def compute_u(
         request,
         hparams,
         layer,
-        context_templates)
+        prefixes)
 
     # Apply inverse second moment adjustment
     if hparams.mom2_adjustment:

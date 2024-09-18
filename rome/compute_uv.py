@@ -4,7 +4,7 @@ from transformers import PreTrainedModel, PreTrainedTokenizer
 from .compute_u import compute_u
 from .compute_v import compute_v
 from .hparams import ROMEHyperParams
-from .prefixes import get_context_templates
+from .prefixes import iter_random_prefixes
 from .request import TextRomeRequest
 
 
@@ -16,7 +16,7 @@ def execute_rome(
     stats_dir: str,
 ) -> tuple[torch.Tensor, torch.Tensor]:
     # prefixes
-    context_templates = get_context_templates(model, tok, hparams.context_template_length_params)
+    prefixes = list(iter_random_prefixes(model, tok, hparams.context_template_length_params))
 
     # Compute rank-1 update matrix
     left_vector: torch.Tensor = compute_u(
@@ -25,7 +25,7 @@ def execute_rome(
         request,
         hparams,
         hparams.layer,
-        context_templates,
+        prefixes,
         stats_dir,
     )
     print("Left vector shape:", left_vector.shape)
@@ -37,7 +37,7 @@ def execute_rome(
         hparams,
         hparams.layer,
         left_vector,
-        context_templates,
+        prefixes,
     )
     print("Right vector shape:", right_vector.shape)
 

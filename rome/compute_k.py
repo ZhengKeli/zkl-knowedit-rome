@@ -12,13 +12,13 @@ def compute_k(
     request: TextRomeRequest,
     hparams: ROMEHyperParams,
     layer: int,
-    context_templates: list[str],
+    prefixes: list[str],
 ) -> torch.Tensor:
     return repr_tools.get_reprs_at_word_tokens(
         model=model,
         tok=tokenizer,
         module_template=hparams.rewrite_module_tmp,
         layer=layer,
-        context_templates=[templ.format(request.prompt_template) for templ in context_templates],
-        words=[request.subject for _ in range(len(context_templates))],
+        inputs=[templ + request.prompt_template for templ in prefixes],
+        words=[request.subject for _ in range(len(prefixes))],
         track="in").mean(0)
