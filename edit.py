@@ -3,14 +3,14 @@ import os
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from zkl_serialization import load_and_parse_json
 
-from rome import ROMEHyperParams, apply_rome_to_model, TextRomeRequest
+from rome import ROMEHyperParams, apply_rome_to_model, TextRomeRewriting
 from rome.utils.generate import generate_fast
 
 model_name = "gpt2-medium"
 hparams_file_path = os.path.join("hparams/ROME/gpt2-medium.json")
 stats_dir = "data/stats"
 
-requests = [TextRomeRequest(
+rewritings = [TextRomeRewriting(
     prompt="Steve Jobs is the founder of ",
     subject="Steve Jobs",
     target="Microsoft"
@@ -41,7 +41,7 @@ pre_update_text = generate_fast(model, tokenizer, generation_prompts, max_out_le
 print(pre_update_text)
 
 print(f"Applying ROME to model")
-apply_rome_to_model(model, tokenizer, requests, hparams, stats_dir)
+apply_rome_to_model(model, tokenizer, rewritings, hparams, stats_dir)
 
 print("Generating post-update text")
 post_update_text = generate_fast(model, tokenizer, generation_prompts, max_out_len=100)

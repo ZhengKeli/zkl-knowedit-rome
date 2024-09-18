@@ -5,13 +5,13 @@ from .compute_u import compute_u
 from .compute_v import compute_v
 from .hparams import ROMEHyperParams
 from .prefixes import iter_random_prefixes
-from .request import TextRomeRequest
+from .rewriting import TextRomeRewriting
 
 
 def execute_rome(
     model: PreTrainedModel,
     tok: PreTrainedTokenizer,
-    request: TextRomeRequest,
+    rewriting: TextRomeRewriting,
     hparams: ROMEHyperParams,
     stats_dir: str,
 ) -> tuple[torch.Tensor, torch.Tensor]:
@@ -22,7 +22,7 @@ def execute_rome(
     left_vector: torch.Tensor = compute_u(
         model,
         tok,
-        request,
+        rewriting,
         hparams,
         hparams.layer,
         prefixes,
@@ -33,7 +33,7 @@ def execute_rome(
     right_vector: torch.Tensor = compute_v(
         model,
         tok,
-        request,
+        rewriting,
         hparams,
         hparams.layer,
         left_vector,

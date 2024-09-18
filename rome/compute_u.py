@@ -4,13 +4,13 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 from .compute_c import compute_c_inv
 from .compute_k import compute_k
 from .hparams import ROMEHyperParams
-from .request import TextRomeRequest
+from .rewriting import TextRomeRewriting
 
 
 def compute_u(
     model: AutoModelForCausalLM,
     tok: AutoTokenizer,
-    request: TextRomeRequest,
+    rewriting: TextRomeRewriting,
     hparams: ROMEHyperParams,
     layer: int,
     prefixes: list[str],
@@ -19,7 +19,7 @@ def compute_u(
     u = compute_k(
         model,
         tok,
-        request,
+        rewriting,
         hparams,
         layer,
         prefixes)

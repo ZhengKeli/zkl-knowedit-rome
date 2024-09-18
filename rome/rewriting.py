@@ -4,7 +4,7 @@ from typing_extensions import overload
 
 
 @dataclass
-class TextRomeRequest:
+class TextRomeRewriting:
     prompt: str
     target: str
     subject_head: int

@@ -5,13 +5,13 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 from . import repr_tools
 from .utils import nethook
 from .hparams import ROMEHyperParams
-from .request import TextRomeRequest
+from .rewriting import TextRomeRewriting
 
 
 def compute_v(
     model: AutoModelForCausalLM,
     tok: AutoTokenizer,
-    request: TextRomeRequest,
+    rewriting: TextRomeRewriting,
     hparams: ROMEHyperParams,
     layer: int,
     left_vector: torch.Tensor,
@@ -25,15 +25,15 @@ def compute_v(
     print("Computing right vector (v)")
 
     # Tokenize target into list of int token IDs
-    target_ids = tok(request.target, return_tensors="pt").to("cuda")["input_ids"][0]
+    target_ids = tok(rewriting.target, return_tensors="pt").to("cuda")["input_ids"][0]
 
     # Compile list of rewriting and KL x/y pairs
-    rewriting_prompts = [prefix + request.prompt_template + tok.decode(target_ids[:-1]) for prefix in prefixes]
+    rewriting_prompts = [prefix + rewriting.prompt_template + tok.decode(target_ids[:-1]) for prefix in prefixes]
     kl_prompts = ["{} is a"]
     all_prompts = rewriting_prompts + kl_prompts
 
     input_tok = tok(
-        [prompt.format(request.subject) for prompt in all_prompts],
+        [prompt.format(rewriting.subject) for prompt in all_prompts],
         return_tensors="pt",
         padding=True,
     ).to("cuda")
@@ -48,7 +48,7 @@ def compute_v(
 
     # Compute indices of the tokens where the fact is looked up
     lookup_idxs = [
-        find_fact_lookup_idx(prompt, request.subject, tok, verbose=(i == 0))
+        find_fact_lookup_idx(prompt, rewriting.subject, tok, verbose=(i == 0))
         for i, prompt in enumerate(all_prompts)
     ]
 
@@ -135,7 +135,7 @@ def compute_v(
         loss = nll_loss + kl_loss + weight_decay
         print(
             f"loss {np.round(loss.item(), 3)} = {np.round(nll_loss.item(), 3)} + {np.round(kl_loss.item(), 3)} + {np.round(weight_decay.item(), 3)} "
-            f"avg prob of [{request.target}] "
+            f"avg prob of [{rewriting.target}] "
             f"{torch.exp(-nll_loss_each).mean().item()}"
         )
         if loss < 5e-2:
@@ -162,8 +162,8 @@ def compute_v(
         model,
         tok,
         layer,
-        input=request.prompt_template,
-        word=request.subject,
+        input=rewriting.prompt_template,
+        word=rewriting.subject,
         module_template=hparams.rewrite_module_tmp,
     )
 
