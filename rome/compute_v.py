@@ -65,12 +65,15 @@ def compute_v(
     # Set up an optimization over a latent vector that, when output at the
     # rewrite layer, i.e. hypothesized fact lookup location, will induce the
     # target token to be predicted at the final layer.
-    delta = torch.zeros((model.config.n_embd,), requires_grad=True, device="cuda")
     target_init, kl_distr_init = None, None
+
+    # Optimizer
+    delta: torch.Tensor | None = None
+    opt: torch.optim.Optimizer | None = None
 
     # Inserts new "delta" variable at the appropriate part of the computation
     def edit_output_fn(cur_out, cur_layer):
-        nonlocal target_init
+        nonlocal target_init, delta, opt
 
         # Store initial value of the vector of interest
         if target_init is None:
@@ -78,16 +81,17 @@ def compute_v(
             # Initial value is recorded for the clean sentence
             target_init = cur_out[0, lookup_idxs[0]].detach().clone()
 
+        if delta is None:
+            delta = torch.zeros(cur_out.shape[-1:], dtype=cur_out.dtype, device=cur_out.device, requires_grad=True)
+            opt = torch.optim.Adam([delta], lr=hparams.v_lr)
+
         for i, idx in enumerate(lookup_idxs):
             cur_out[i, idx, :] += delta
 
         return cur_out
 
-    # Optimizer
-    opt = torch.optim.Adam([delta], lr=hparams.v_lr)
-    nethook.set_requires_grad(False, model)
-
     # Execute optimization
+    nethook.set_requires_grad(False, model)
     for it in range(hparams.v_num_grad_steps):
         # Forward propagation
         with nethook.TraceDict(
