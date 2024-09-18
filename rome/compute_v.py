@@ -72,15 +72,14 @@ def compute_v(
     def edit_output_fn(cur_out, cur_layer):
         nonlocal target_init
 
-        if cur_layer == hparams.mlp_module_tmp.format(layer):
-            # Store initial value of the vector of interest
-            if target_init is None:
-                print("Recording initial value of v*")
-                # Initial value is recorded for the clean sentence
-                target_init = cur_out[0, lookup_idxs[0]].detach().clone()
+        # Store initial value of the vector of interest
+        if target_init is None:
+            print("Recording initial value of v*")
+            # Initial value is recorded for the clean sentence
+            target_init = cur_out[0, lookup_idxs[0]].detach().clone()
 
-            for i, idx in enumerate(lookup_idxs):
-                cur_out[i, idx, :] += delta
+        for i, idx in enumerate(lookup_idxs):
+            cur_out[i, idx, :] += delta
 
         return cur_out
 
@@ -95,9 +94,7 @@ def compute_v(
         # Forward propagation
         with nethook.TraceDict(
             module=model,
-            layers=[
-                hparams.mlp_module_tmp.format(layer),
-            ],
+            layers=[hparams.mlp_module_tmp.format(layer)],
             retain_input=False,
             retain_output=True,
             edit_output=edit_output_fn,
