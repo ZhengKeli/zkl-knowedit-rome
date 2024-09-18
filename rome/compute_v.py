@@ -28,10 +28,8 @@ def compute_v(
     target_ids = tok(request.target, return_tensors="pt").to("cuda")["input_ids"][0]
 
     # Compile list of rewriting and KL x/y pairs
-    rewriting_prompts, kl_prompts = [
-        prefix + request.prompt_template + tok.decode(target_ids[:-1])
-        for prefix in prefixes
-    ], ["{} is a"]
+    rewriting_prompts = [prefix + request.prompt_template + tok.decode(target_ids[:-1]) for prefix in prefixes]
+    kl_prompts = ["{} is a"]
     all_prompts = rewriting_prompts + kl_prompts
 
     input_tok = tok(
