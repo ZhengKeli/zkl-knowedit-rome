@@ -7,7 +7,6 @@ class ROMEHyperParams:
     layer: int
     v_num_grad_steps: int
     v_lr: float
-    v_loss_layer: int
     v_weight_decay: float
     clamp_norm_factor: float
     kl_factor: float

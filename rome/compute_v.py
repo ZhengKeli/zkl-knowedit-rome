@@ -62,11 +62,6 @@ def compute_v(
         for i, prompt in enumerate(all_prompts)
     ]
 
-    # Finalize rewrite and loss layers
-    loss_layer = max(hparams.v_loss_layer, layer)
-    print(f"Rewrite layer is {layer}")
-    print(f"Tying optimization objective to {loss_layer}")
-
     # Set up an optimization over a latent vector that, when output at the
     # rewrite layer, i.e. hypothesized fact lookup location, will induce the
     # target token to be predicted at the final layer.
@@ -101,7 +96,6 @@ def compute_v(
         with nethook.TraceDict(
             module=model,
             layers=[
-                hparams.layer_module_tmp.format(loss_layer),
                 hparams.mlp_module_tmp.format(layer),
             ],
             retain_input=False,
