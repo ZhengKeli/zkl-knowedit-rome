@@ -48,9 +48,8 @@ def get_words_idxs_in_templates(
 
     # Compute prefixes and suffixes of the tokenized context
     fill_idxs = [tmp.index("{}") for tmp in context_templates]
-    prefixes, suffixes = [
-        tmp[: fill_idxs[i]] for i, tmp in enumerate(context_templates)
-    ], [tmp[fill_idxs[i] + 2:] for i, tmp in enumerate(context_templates)]
+    prefixes = [tmp[: fill_idxs[i]] for i, tmp in enumerate(context_templates)]
+    suffixes = [tmp[fill_idxs[i] + 2:] for i, tmp in enumerate(context_templates)]
     words = deepcopy(words)
 
     # Pre-process tokens
