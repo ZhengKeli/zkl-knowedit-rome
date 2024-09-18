@@ -89,8 +89,6 @@ def compute_v(
 
     # Execute optimization
     for it in range(hparams.v_num_grad_steps):
-        opt.zero_grad()
-
         # Forward propagation
         with nethook.TraceDict(
             module=model,
@@ -148,6 +146,7 @@ def compute_v(
         # Backpropagate
         loss.backward()
         opt.step()
+        opt.zero_grad()
 
         # Project within L2 ball
         max_norm = hparams.clamp_norm_factor * target_init.norm()
