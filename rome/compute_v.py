@@ -1,8 +1,11 @@
+from typing import Iterable
+
 import numpy as np
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
 from . import repr_tools
+from .preserving import TextRomePreserving
 from .utils import nethook
 from .hparams import ROMEHyperParams
 from .rewriting import TextRomeRewriting
@@ -12,6 +15,7 @@ def compute_v(
     model: AutoModelForCausalLM,
     tok: AutoTokenizer,
     rewriting: TextRomeRewriting,
+    preservings: Iterable[TextRomePreserving] | None,
     hparams: ROMEHyperParams,
     layer: int,
     left_vector: torch.Tensor,
@@ -29,7 +33,13 @@ def compute_v(
 
     # Compile list of rewriting and KL x/y pairs
     rewriting_prompts = [prefix + rewriting.prompt_template + tok.decode(target_ids[:-1]) for prefix in prefixes]
-    kl_prompts = ["{} is a"]
+    if preservings is None:
+        preservings = [TextRomePreserving(
+            prompt=f"{rewriting.subject} is a ",
+            subject_head=0,
+            subject_tail=len(rewriting.subject)
+        )]
+    kl_prompts = [preserving.prompt_template for preserving in preservings]
     all_prompts = rewriting_prompts + kl_prompts
 
     input_tok = tok(

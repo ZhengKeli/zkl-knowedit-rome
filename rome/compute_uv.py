@@ -34,6 +34,7 @@ def execute_rome(
         model,
         tok,
         rewriting,
+        None,
         hparams,
         hparams.layer,
         left_vector,
