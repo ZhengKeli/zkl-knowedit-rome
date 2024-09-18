@@ -9,7 +9,7 @@ from .utils import nethook
 def get_reprs_at_word_tokens(
     model: AutoModelForCausalLM,
     tok: AutoTokenizer,
-    context_templates: list[str],
+    inputs: list[str],
     words: list[str],
     layer: int,
     module_template: str,
@@ -21,11 +21,11 @@ def get_reprs_at_word_tokens(
     for more details.
     """
 
-    idxs = get_words_idxs_in_templates(tok, context_templates, words)
+    idxs = get_words_idxs_in_templates(tok, inputs, words)
     return get_reprs_at_idxs(
         model,
         tok,
-        [context_templates[i].format(words[i]) for i in range(len(words))],
+        [inputs[i].format(words[i]) for i in range(len(words))],
         idxs,
         layer,
         module_template,
@@ -34,7 +34,7 @@ def get_reprs_at_word_tokens(
 
 
 def get_words_idxs_in_templates(
-    tok: AutoTokenizer, context_templates: str, words: str
+    tok: AutoTokenizer, input: str, words: str
 ) -> int:
     """
     Given list of template strings, each with *one* format specifier
@@ -43,13 +43,13 @@ def get_words_idxs_in_templates(
     """
 
     assert all(
-        tmp.count("{}") == 1 for tmp in context_templates
+        tmp.count("{}") == 1 for tmp in input
     ), "We currently do not support multiple fill-ins for context"
 
     # Compute prefixes and suffixes of the tokenized context
-    fill_idxs = [tmp.index("{}") for tmp in context_templates]
-    prefixes = [tmp[: fill_idxs[i]] for i, tmp in enumerate(context_templates)]
-    suffixes = [tmp[fill_idxs[i] + 2:] for i, tmp in enumerate(context_templates)]
+    fill_idxs = [tmp.index("{}") for tmp in input]
+    prefixes = [tmp[: fill_idxs[i]] for i, tmp in enumerate(input)]
+    suffixes = [tmp[fill_idxs[i] + 2:] for i, tmp in enumerate(input)]
     words = deepcopy(words)
 
     # Pre-process tokens
