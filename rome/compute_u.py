@@ -1,10 +1,11 @@
+import numpy as np
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
 from .compute_c import compute_c_inv
 from .compute_k import compute_k
 from .hparams import ROMEHyperParams
-from .rewriting import TextRomeRewriting
+from .rewriting import TextRomeRewriting, TokenizedRomeRewriting
 
 
 def compute_u(
@@ -16,13 +17,14 @@ def compute_u(
     prefixes: list[str],
     stats_dir: str,
 ) -> torch.Tensor:
+    rewriting_tokenized = TokenizedRomeRewriting.from_text_rewriting(rewriting, tok)
+    prefixes_tokenized = [np.asarray(tok.encode(prefix), dtype=np.int64) for prefix in prefixes]
     u = compute_k(
-        model,
-        tok,
-        rewriting,
         hparams,
+        model,
         layer,
-        prefixes)
+        prefixes_tokenized,
+        rewriting_tokenized)
 
     # Apply inverse second moment adjustment
     if hparams.mom2_adjustment:
