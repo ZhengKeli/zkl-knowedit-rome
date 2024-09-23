@@ -10,34 +10,30 @@ from .rewriting import TextRomeRewriting
 
 def execute_rome(
     model: PreTrainedModel,
-    tok: PreTrainedTokenizer,
+    tokenizer: PreTrainedTokenizer,
     rewriting: TextRomeRewriting,
     hparams: ROMEHyperParams,
     stats_dir: str,
 ) -> tuple[torch.Tensor, torch.Tensor]:
     # prefixes
-    prefixes = list(iter_random_prefixes(model, tok, hparams.context_template_length_params))
+    prefixes = list(iter_random_prefixes(model, tokenizer, hparams.context_template_length_params))
 
-    # Compute rank-1 update matrix
-    left_vector: torch.Tensor = compute_u(
+    u = compute_u(
         hparams,
         model,
-        tok,
+        tokenizer,
         prefixes,
         rewriting,
         stats_dir)
-    print("Left vector shape:", left_vector.shape)
 
-    right_vector: torch.Tensor = compute_v(
+    v = compute_v(
         model,
-        tok,
+        tokenizer,
         rewriting,
         None,
         hparams,
         hparams.layer,
-        left_vector,
-        prefixes,
-    )
-    print("Right vector shape:", right_vector.shape)
+        u,
+        prefixes)
 
-    return left_vector, right_vector
+    return u, v
