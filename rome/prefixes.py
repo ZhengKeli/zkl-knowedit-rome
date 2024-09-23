@@ -1,12 +1,12 @@
 from typing import Iterable, Iterator
 
-from transformers import AutoModelForCausalLM, PreTrainedTokenizer
+from transformers import PreTrainedModel, PreTrainedTokenizer
 
 from .utils.generate import generate_fast
 
 
 def iter_random_prefixes(
-    model: AutoModelForCausalLM,
+    model: PreTrainedModel,
     tokenizer: PreTrainedTokenizer,
     length_params: Iterable[tuple[int, int]],
 ) -> Iterator[str]:
@@ -16,7 +16,7 @@ def iter_random_prefixes(
 
 
 def iter_random_texts(
-    model: AutoModelForCausalLM,
+    model: PreTrainedModel,
     tokenizer: PreTrainedTokenizer,
     length_params: Iterable[tuple[int, int]],
 ) -> Iterator[str]:
