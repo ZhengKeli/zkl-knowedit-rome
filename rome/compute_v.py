@@ -2,18 +2,18 @@ from typing import Iterable
 
 import numpy as np
 import torch
-from transformers import AutoModelForCausalLM, AutoTokenizer
+from transformers import PreTrainedModel, PreTrainedTokenizer
 
 from . import repr_tools
-from .preserving import TextRomePreserving
-from .utils import nethook
 from .hparams import ROMEHyperParams
+from .preserving import TextRomePreserving
 from .rewriting import TextRomeRewriting
+from .utils import nethook
 
 
 def compute_v(
-    model: AutoModelForCausalLM,
-    tok: AutoTokenizer,
+    model: PreTrainedModel,
+    tokenizer: PreTrainedTokenizer,
     rewriting: TextRomeRewriting,
     preservings: Iterable[TextRomePreserving] | None,
     hparams: ROMEHyperParams,
@@ -29,10 +29,10 @@ def compute_v(
     print("Computing right vector (v)")
 
     # Tokenize target into list of int token IDs
-    target_ids = tok(rewriting.target, return_tensors="pt").to("cuda")["input_ids"][0]
+    target_ids = tokenizer(rewriting.target, return_tensors="pt").to("cuda")["input_ids"][0]
 
     # Compile list of rewriting and KL x/y pairs
-    rewriting_prompts = [prefix + rewriting.prompt_template + tok.decode(target_ids[:-1]) for prefix in prefixes]
+    rewriting_prompts = [prefix + rewriting.prompt_template + tokenizer.decode(target_ids[:-1]) for prefix in prefixes]
     if preservings is None:
         preservings = [TextRomePreserving(
             prompt=f"{rewriting.subject} is a ",
@@ -42,7 +42,7 @@ def compute_v(
     kl_prompts = [preserving.prompt_template for preserving in preservings]
     all_prompts = rewriting_prompts + kl_prompts
 
-    input_tok = tok(
+    input_tok = tokenizer(
         [prompt.format(rewriting.subject) for prompt in all_prompts],
         return_tensors="pt",
         padding=True,
@@ -58,7 +58,7 @@ def compute_v(
 
     # Compute indices of the tokens where the fact is looked up
     lookup_idxs = [
-        find_fact_lookup_idx(prompt, rewriting.subject, tok, verbose=(i == 0))
+        find_fact_lookup_idx(prompt, rewriting.subject, tokenizer, verbose=(i == 0))
         for i, prompt in enumerate(all_prompts)
     ]
 
@@ -164,7 +164,7 @@ def compute_v(
     # cur_output, the original output of the 2nd MLP layer.
     cur_input, cur_output = get_module_input_output_at_word(
         model,
-        tok,
+        tokenizer,
         layer,
         input=rewriting.prompt_template,
         word=rewriting.subject,
@@ -184,8 +184,8 @@ def compute_v(
 
 
 def get_module_input_output_at_word(
-    model: AutoModelForCausalLM,
-    tok: AutoTokenizer,
+    model: PreTrainedModel,
+    tok: PreTrainedTokenizer,
     layer: int,
     input: str,
     word: str,
@@ -216,7 +216,7 @@ def get_module_input_output_at_word(
 def find_fact_lookup_idx(
     prompt: str,
     subject: str,
-    tok: AutoTokenizer,
+    tok: PreTrainedTokenizer,
     verbose=True,
 ) -> int:
     """
