@@ -1,10 +1,9 @@
 import os
 
-from transformers import AutoModelForCausalLM, AutoTokenizer
+from transformers import AutoModelForCausalLM, AutoTokenizer, pipeline
 from zkl_serialization import load_and_parse_json
 
-from rome import ROMEHyperParams, apply_rome_to_model, TextRomeRewriting
-from rome.utils.generate import generate_fast
+from rome import ROMEHyperParams, TextRomeRewriting, apply_rome_to_model
 
 model_name = "gpt2-medium"
 hparams_file_path = os.path.join("hparams/ROME/gpt2-medium.json")
@@ -37,14 +36,30 @@ hparams = load_and_parse_json(hparams_file_path, ROMEHyperParams)
 print(hparams)
 
 print("Generating pre-update text")
-pre_update_text = generate_fast(model, tokenizer, generation_prompts, max_out_len=100)
+pipe = pipeline("text-generation",
+    model=model,
+    tokenizer=tokenizer,
+    device=model.device,
+    num_return_sequences=1,
+    return_full_text=True,
+    max_new_tokens=64)
+pre_update_text = [pipe(prompt)[0]['generated_text'] for prompt in generation_prompts]
+del pipe
 print(pre_update_text)
 
 print(f"Applying ROME to model")
 apply_rome_to_model(model, tokenizer, rewritings, hparams, stats_dir)
 
 print("Generating post-update text")
-post_update_text = generate_fast(model, tokenizer, generation_prompts, max_out_len=100)
+pipe = pipeline("text-generation",
+    model=model,
+    tokenizer=tokenizer,
+    device=model.device,
+    num_return_sequences=1,
+    return_full_text=True,
+    max_new_tokens=64)
+post_update_text = [pipe(prompt)[0]['generated_text'] for prompt in generation_prompts]
+del pipe
 print(post_update_text)
 
 print("Summarizing differences")
