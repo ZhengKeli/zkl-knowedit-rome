@@ -20,14 +20,12 @@ def execute_rome(
 
     # Compute rank-1 update matrix
     left_vector: torch.Tensor = compute_u(
+        hparams,
         model,
         tok,
-        rewriting,
-        hparams,
-        hparams.layer,
         prefixes,
-        stats_dir,
-    )
+        rewriting,
+        stats_dir)
     print("Left vector shape:", left_vector.shape)
 
     right_vector: torch.Tensor = compute_v(
