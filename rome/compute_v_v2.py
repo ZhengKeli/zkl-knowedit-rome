@@ -6,9 +6,10 @@ from transformers import PreTrainedModel, PreTrainedTokenizer
 
 from . import repr_tools
 from .hparams import ROMEHyperParams
-from .preserving import TextRomePreserving
-from .rewriting import TextRomeRewriting
+from .preserving import TextRomePreserving, TokenizedRomePreserving
+from .rewriting import TextRomeRewriting, TokenizedRomeRewriting
 from .utils import nethook
+from .utils.batching import stack_with_padding
 from .utils.hooks import forward_output_hook
 from .utils.nethook import get_module
 
@@ -34,36 +35,45 @@ def compute_v(
             subject_tail=len(rewriting.subject)
         )]
 
-    # Tokenize target into list of int token IDs
-    rewriting_target = tokenizer(rewriting.target, return_tensors="pt").to("cuda")["input_ids"][0]
+    prefixes_tokenized = [np.asarray(tokenizer.encode(prefix), dtype=np.int64) for prefix in prefixes]
+    rewriting_tokenized = TokenizedRomeRewriting.from_text_rewriting(rewriting, tokenizer)
+    preservings_tokenized = [TokenizedRomePreserving.from_text_preserving(preserving, tokenizer) for preserving in
+                             preservings]
 
-    # Compile list of rewriting and KL x/y pairs
-    rewriting_prompts = [prefix + rewriting.prompt_template + tokenizer.decode(rewriting_target[:-1]) for prefix in prefixes]
-    preserving_prompts = [preserving.prompt_template for preserving in preservings]
-    all_prompts = rewriting_prompts + preserving_prompts
+    rewritings_inputs = [
+        np.concatenate([
+            prefix_tokenized,
+            rewriting_tokenized.prompt,
+            rewriting_tokenized.target])
+        for prefix_tokenized in prefixes_tokenized]
+    rewritings_subject_token_index = [
+        (len(prefix_tokenized) + rewriting_tokenized.subject_tail - 1)
+        for prefix_tokenized in prefixes_tokenized]
+    rewritings_target_tokens_prob_coo = [
+        (i, len(prefix_tokenized) + len(rewriting_tokenized.prompt) - 1 + j, target_token)
+        for j, target_token in enumerate(rewriting_tokenized.target)
+        for i, prefix_tokenized in enumerate(prefixes_tokenized)]
 
-    input_tok = tokenizer(
-        [prompt.format(rewriting.subject) for prompt in all_prompts],
-        return_tensors="pt",
-        padding=True,
-    ).to("cuda")
+    preservings_inputs = [
+        preserving.prompt
+        for preserving in preservings_tokenized]
+    preservings_subject_token_index = [
+        (preserving.subject_tail - 1)
+        for preserving in preservings_tokenized]
 
-    # Compute rewriting targets
-    rewriting_targets = torch.tensor(-100, device="cuda").repeat(len(rewriting_prompts), *input_tok["input_ids"].shape[1:])
-    for i in range(len(rewriting_prompts)):
-        ex_len = input_tok["attention_mask"][i].sum()
-        rewriting_targets[i, ex_len - len(rewriting_target): ex_len] = rewriting_target
-
-    # Compute indices of the tokens where the fact is looked up
-    lookup_idxs = [
-        find_fact_lookup_idx(prompt, rewriting.subject, tokenizer, verbose=(i == 0))
-        for i, prompt in enumerate(all_prompts)
-    ]
+    all_in_tokens = stack_with_padding([
+        *rewritings_inputs,
+        *preservings_inputs,
+    ], tokenizer.pad_token_id)
+    all_in_tokens = torch.asarray(all_in_tokens, dtype=torch.int64, device=model.device)
+    all_in_subject_token_index = [
+        *rewritings_subject_token_index,
+        *preservings_subject_token_index]
 
     # Set up an optimization over a latent vector that, when output at the
     # rewrite layer, i.e. hypothesized fact lookup location, will induce the
     # target token to be predicted at the final layer.
-    target_init, kl_distr_init = None, None
+    target_init, preservings_log_probs_init = None, None
 
     # Optimizer
     delta: torch.Tensor | None = None
@@ -77,60 +87,56 @@ def compute_v(
         if target_init is None:
             print("Recording initial value of v*")
             # Initial value is recorded for the clean sentence
-            target_init = cur_out[0, lookup_idxs[0]].detach().clone()
+            target_init = cur_out[0, all_in_subject_token_index[0]].detach().clone()
 
         if delta is None:
             delta = torch.zeros(cur_out.shape[-1:], dtype=cur_out.dtype, device=cur_out.device, requires_grad=True)
             opt = torch.optim.Adam([delta], lr=hparams.v_lr)
 
-        for i, idx in enumerate(lookup_idxs):
+        for i, idx in enumerate(all_in_subject_token_index):
             cur_out[i, idx, :] += delta
 
         return cur_out
 
     # Execute optimization
     nethook.set_requires_grad(False, model)
-    edit_module = get_module(model, hparams.mlp_module_tmp.format(layer))
+    edit_module = get_module(model, hparams.rewrite_module_tmp.format(layer))
     for it in range(hparams.v_num_grad_steps):
         # Forward propagation
         with forward_output_hook(edit_module, edit_output_fn):
-            logits = model(**input_tok).logits
+            all_out_tokens_logits = model(all_in_tokens).logits
+        rewritings_out_tokens_logits = all_out_tokens_logits[:len(rewritings_inputs)]
+        preservings_out_tokens_logits = all_out_tokens_logits[len(rewritings_inputs):]
 
         # Compute distribution for KL divergence
-        kl_logits = torch.stack([
-                logits[i - len(preserving_prompts), idx, :]
-                for i, idx in enumerate(lookup_idxs[-len(preserving_prompts):])],
-            dim=0)
-        kl_log_probs = torch.nn.functional.log_softmax(kl_logits, dim=1)
-        if kl_distr_init is None:
-            kl_distr_init = kl_log_probs.detach().clone()
+        coo_i, coo_j = range(len(preservings_inputs)), preservings_subject_token_index
+        preservings_logits = preservings_out_tokens_logits[coo_i, coo_j, :]
+        preservings_log_probs = torch.nn.functional.log_softmax(preservings_logits, dim=1)
+        if preservings_log_probs_init is None:
+            preservings_log_probs_init = preservings_log_probs.detach().clone()
+        preserving_loss = torch.nn.functional.kl_div(
+            preservings_log_probs_init, preservings_log_probs,
+            log_target=True, reduction="batchmean")
 
         # Compute loss on rewriting targets
-        log_probs = torch.log_softmax(logits, dim=2)
+        rewritings_out_tokens_log_probs = torch.log_softmax(rewritings_out_tokens_logits, dim=-1)
+        coo_i, coo_j, coo_k = zip(*rewritings_target_tokens_prob_coo)
+        rewritings_out_tokens_log_prob = rewritings_out_tokens_log_probs[coo_i, coo_j, coo_k]
+        rewriting_loss = -torch.mean(rewritings_out_tokens_log_prob)
 
-        loss = torch.gather(
-            log_probs,
-            2,
-            torch.where(rewriting_targets != -100, rewriting_targets, 0).unsqueeze(2),
-        ).squeeze(2)
-        mask = (rewriting_targets != -100).float()
+        # Compute loss on regularization
+        regularization_loss = hparams.v_weight_decay * (torch.norm(delta) / torch.norm(target_init) ** 2)
+        # regularization_loss = hparams.v_weight_decay * torch.norm(delta) ** 2
 
-        # Aggregate total losses
-        nll_loss_each = -(loss * mask).sum(1) / rewriting_target.size(0)
-        nll_loss = nll_loss_each.mean()
-        kl_loss = hparams.kl_factor * torch.nn.functional.kl_div(
-            kl_distr_init, kl_log_probs, log_target=True, reduction="batchmean"
-        )
-        weight_decay = hparams.v_weight_decay * (
-            torch.norm(delta) / torch.norm(target_init) ** 2
-        )
-        # weight_decay = hparams.v_weight_decay * torch.norm(delta) ** 2
-        loss = nll_loss + kl_loss + weight_decay
-        print(
-            f"loss {np.round(loss.item(), 3)} = {np.round(nll_loss.item(), 3)} + {np.round(kl_loss.item(), 3)} + {np.round(weight_decay.item(), 3)} "
-            f"avg prob of [{rewriting.target}] "
-            f"{torch.exp(-nll_loss_each).mean().item()}"
-        )
+        loss = rewriting_loss + hparams.kl_factor * preserving_loss + regularization_loss
+
+        print(", ".join([
+            f"loss={loss.item():.3f}",
+            f"rewriting_loss={rewriting_loss.item():.3f}",
+            f"preserving_loss={preserving_loss.item():.3f}",
+            f"regularization_loss={regularization_loss.item():.3f}",
+            f"prob={rewritings_out_tokens_log_prob.exp().mean().item():.3f}"]))
+
         if loss < 5e-2:
             break
 
@@ -199,29 +205,3 @@ def get_module_input_output_at_word(
 
     l_input, l_output = l_input[0], l_output[0]
     return l_input.detach(), l_output.detach()
-
-
-def find_fact_lookup_idx(
-    prompt: str,
-    subject: str,
-    tok: PreTrainedTokenizer,
-    verbose=True,
-) -> int:
-    """
-    Computes hypothesized fact lookup index given a sentence and subject.
-    """
-
-    ret = repr_tools.get_words_idxs_in_templates(
-        tok=tok,
-        input=[prompt],
-        words=[subject],
-    )[0][0]
-
-    sentence = prompt.format(subject)
-    if verbose:
-        print(
-            f"Lookup index found: {ret} | Sentence: {sentence} | Token:",
-            tok.decode(tok(sentence)["input_ids"][ret]),
-        )
-
-    return ret
