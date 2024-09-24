@@ -10,9 +10,9 @@ hparams_file_path = os.path.join("hparams/ROME/gpt2-medium.json")
 stats_dir = "data/stats"
 
 rewritings = [TextRomeRewriting(
-    prompt="Steve Jobs is the founder of ",
+    prompt="Steve Jobs is the founder of",
     subject="Steve Jobs",
-    target="Microsoft"
+    target=" Microsoft"
 )]
 
 generation_prompts = [
