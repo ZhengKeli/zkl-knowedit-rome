@@ -38,7 +38,7 @@ def compute_v(
     assert isinstance(k, torch.Tensor)
     assert isinstance(v, torch.Tensor)
 
-    delta = compute_v_delta(
+    v_delta = compute_v_delta(
         hparams,
         model,
         layer,
@@ -47,10 +47,10 @@ def compute_v(
         preservings,
         v)
 
-    v_star = v + delta
+    v_star = v + v_delta
 
     # Solving the linear system to compute the right vector
-    right_vector = (v_star - v) / torch.dot(k, left_vector)
+    right_vector = v_delta / torch.dot(k, left_vector)
     print(f"Delta norm: {(v_star - v).norm().item()}")
     print(f"Change in target norm: {v.norm().item()} to {v_star.norm().item()} => {(v_star.norm() - v.norm()).item()}")
     print(f"Division Factor: {torch.dot(k, left_vector).item()}")
