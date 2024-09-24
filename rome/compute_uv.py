@@ -3,7 +3,7 @@ import torch
 from transformers import PreTrainedModel, PreTrainedTokenizer
 
 from .compute_u import compute_u
-from .compute_v_v2 import compute_v
+from .compute_v import compute_v
 from .hparams import ROMEHyperParams
 from .prefixes import iter_random_prefixes
 from .preserving import TextRomePreserving, TokenizedRomePreserving
