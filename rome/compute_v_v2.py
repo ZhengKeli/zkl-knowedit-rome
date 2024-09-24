@@ -89,11 +89,10 @@ def compute_v_delta(
         (preserving.subject_tail - 1)
         for preserving in preservings]
 
-    all_in_tokens = stack_with_padding([
+    all_in_tokens = torch.asarray(stack_with_padding([
         *rewritings_inputs,
         *preservings_inputs,
-    ], 0)
-    all_in_tokens = torch.asarray(all_in_tokens, dtype=torch.int64, device=model.device)
+    ], 0), dtype=torch.int64, device=model.device)
     all_in_subject_token_index = [
         *rewritings_subject_token_index,
         *preservings_subject_token_index]
@@ -122,7 +121,7 @@ def compute_v_delta(
         preservings_out_tokens_logits = all_out_tokens_logits[len(rewritings_inputs):]
         coo_i, coo_j = range(len(preservings_inputs)), preservings_subject_token_index
         preservings_logits = preservings_out_tokens_logits[coo_i, coo_j, :]
-        preservings_log_probs = torch.nn.functional.log_softmax(preservings_logits, dim=1)
+        preservings_log_probs = torch.log_softmax(preservings_logits, dim=-1)
         if preservings_log_probs_init is None:
             preservings_log_probs_init = preservings_log_probs.detach().clone()
         preserving_loss = torch.nn.functional.kl_div(
