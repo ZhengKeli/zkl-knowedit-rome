@@ -3,9 +3,10 @@ import torch
 from transformers import PreTrainedModel, PreTrainedTokenizer
 
 from .compute_u import compute_u
-from .compute_v import compute_v
+from .compute_v_v2 import compute_v
 from .hparams import ROMEHyperParams
 from .prefixes import iter_random_prefixes
+from .preserving import TextRomePreserving, TokenizedRomePreserving
 from .rewriting import TextRomeRewriting, TokenizedRomeRewriting
 
 
@@ -20,6 +21,15 @@ def execute_rome(
     prefixes_tokenized = [np.asarray(tokenizer.encode(prefix), dtype=np.int64) for prefix in prefixes]
     rewriting_tokenized = TokenizedRomeRewriting.from_text_rewriting(rewriting, tokenizer)
 
+    preservings = [TextRomePreserving(
+        prompt=f"{rewriting.subject} is a ",
+        subject_head=0,
+        subject_tail=len(rewriting.subject)
+    )]
+    preservings_tokenized = [
+        TokenizedRomePreserving.from_text_preserving(preserving, tokenizer)
+        for preserving in preservings]
+
     u = compute_u(
         hparams,
         model,
@@ -30,12 +40,11 @@ def execute_rome(
 
     v = compute_v(
         model,
-        tokenizer,
-        rewriting,
-        None,
+        rewriting_tokenized,
+        preservings_tokenized,
         hparams,
         hparams.layer,
         u,
-        prefixes)
+        prefixes_tokenized)
 
     return u, v
