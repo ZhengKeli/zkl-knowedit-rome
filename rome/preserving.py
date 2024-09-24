@@ -1,6 +1,9 @@
 from dataclasses import dataclass
 from typing import overload
 
+import numpy as np
+from transformers import PreTrainedTokenizer
+
 
 @dataclass
 class TextRomePreserving:
@@ -47,3 +50,29 @@ class TextRomePreserving:
     @property
     def prompt_template(self) -> str:
         return self.prompt[:self.subject_head] + "{}" + self.prompt[self.subject_tail:]
+
+
+@dataclass
+class TokenizedRomePreserving:
+    prompt: np.ndarray
+    subject_head: int
+    subject_tail: int
+
+    @property
+    def subject(self) -> np.ndarray:
+        return self.prompt[self.subject_head:self.subject_tail]
+
+    @classmethod
+    def from_text_preserving(cls, preserving: TextRomePreserving, tokenizer: PreTrainedTokenizer):
+        prefix_tokenized = np.asarray(tokenizer.encode(preserving.prompt[:preserving.subject_head]), dtype=np.int64)
+        suffix_tokenized = np.asarray(tokenizer.encode(preserving.prompt[preserving.subject_tail:]), dtype=np.int64)
+        subject_tokenized = np.asarray(tokenizer.encode(preserving.subject), dtype=np.int64)
+        prompt_tokenized = np.concatenate([prefix_tokenized, subject_tokenized, suffix_tokenized])
+
+        subject_head_tokenized = len(prefix_tokenized)
+        subject_tail_tokenized = subject_head_tokenized + len(subject_tokenized)
+
+        return cls(
+            prompt=prompt_tokenized,
+            subject_head=subject_head_tokenized,
+            subject_tail=subject_tail_tokenized)
