@@ -9,7 +9,7 @@ class StopForward(Exception):
 
 
 @contextmanager
-def pre_forward_hook(module: torch.nn.Module, func: Callable[[torch.nn.Module, Any], Any]):
+def forward_input_hook(module: torch.nn.Module, func: Callable[[torch.nn.Module, Any], Any]):
     hook = module.register_forward_pre_hook(func)
     try:
         yield
@@ -20,7 +20,7 @@ def pre_forward_hook(module: torch.nn.Module, func: Callable[[torch.nn.Module, A
 
 
 @contextmanager
-def post_forward_hook(module: torch.nn.Module, func: Callable[[torch.nn.Module, Any, Any], Any]):
+def forward_output_hook(module: torch.nn.Module, func: Callable[[torch.nn.Module, Any, Any], Any]):
     hook = module.register_forward_hook(func)
     try:
         yield

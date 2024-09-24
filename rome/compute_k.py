@@ -5,7 +5,7 @@ from transformers import PreTrainedModel
 from .hparams import ROMEHyperParams
 from .rewriting import TokenizedRomeRewriting
 from .utils import nethook
-from .utils.hooks import StopForward, pre_forward_hook
+from .utils.hooks import StopForward, forward_input_hook
 
 
 def compute_k(
@@ -43,7 +43,7 @@ def compute_k(
                 k_num += 1
             raise StopForward()
 
-        with torch.no_grad(), pre_forward_hook(module, hook_func):
+        with torch.no_grad(), forward_input_hook(module, hook_func):
             model(prompt_tokenized)
 
     assert isinstance(k_sum, torch.Tensor)
