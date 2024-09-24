@@ -27,22 +27,20 @@ def compute_v(
     Computes the value (right) vector for the rank-1 update.
     Runs a simple optimization procedure.
     """
-
-    print("Computing right vector (v)")
-
-    # Tokenize target into list of int token IDs
-    target_ids = tokenizer(rewriting.target, return_tensors="pt").to("cuda")["input_ids"][0]
-
-    # Compile list of rewriting and KL x/y pairs
-    rewriting_prompts = [prefix + rewriting.prompt_template + tokenizer.decode(target_ids[:-1]) for prefix in prefixes]
     if preservings is None:
         preservings = [TextRomePreserving(
             prompt=f"{rewriting.subject} is a ",
             subject_head=0,
             subject_tail=len(rewriting.subject)
         )]
-    kl_prompts = [preserving.prompt_template for preserving in preservings]
-    all_prompts = rewriting_prompts + kl_prompts
+
+    # Tokenize target into list of int token IDs
+    rewriting_target = tokenizer(rewriting.target, return_tensors="pt").to("cuda")["input_ids"][0]
+
+    # Compile list of rewriting and KL x/y pairs
+    rewriting_prompts = [prefix + rewriting.prompt_template + tokenizer.decode(rewriting_target[:-1]) for prefix in prefixes]
+    preserving_prompts = [preserving.prompt_template for preserving in preservings]
+    all_prompts = rewriting_prompts + preserving_prompts
 
     input_tok = tokenizer(
         [prompt.format(rewriting.subject) for prompt in all_prompts],
@@ -51,12 +49,10 @@ def compute_v(
     ).to("cuda")
 
     # Compute rewriting targets
-    rewriting_targets = torch.tensor(-100, device="cuda").repeat(
-        len(rewriting_prompts), *input_tok["input_ids"].shape[1:]
-    )
+    rewriting_targets = torch.tensor(-100, device="cuda").repeat(len(rewriting_prompts), *input_tok["input_ids"].shape[1:])
     for i in range(len(rewriting_prompts)):
         ex_len = input_tok["attention_mask"][i].sum()
-        rewriting_targets[i, ex_len - len(target_ids): ex_len] = target_ids
+        rewriting_targets[i, ex_len - len(rewriting_target): ex_len] = rewriting_target
 
     # Compute indices of the tokens where the fact is looked up
     lookup_idxs = [
@@ -101,13 +97,10 @@ def compute_v(
             logits = model(**input_tok).logits
 
         # Compute distribution for KL divergence
-        kl_logits = torch.stack(
-            [
-                logits[i - len(kl_prompts), idx, :]
-                for i, idx in enumerate(lookup_idxs[-len(kl_prompts):])
-            ],
-            dim=0,
-        )
+        kl_logits = torch.stack([
+                logits[i - len(preserving_prompts), idx, :]
+                for i, idx in enumerate(lookup_idxs[-len(preserving_prompts):])],
+            dim=0)
         kl_log_probs = torch.nn.functional.log_softmax(kl_logits, dim=1)
         if kl_distr_init is None:
             kl_distr_init = kl_log_probs.detach().clone()
@@ -123,7 +116,7 @@ def compute_v(
         mask = (rewriting_targets != -100).float()
 
         # Aggregate total losses
-        nll_loss_each = -(loss * mask).sum(1) / target_ids.size(0)
+        nll_loss_each = -(loss * mask).sum(1) / rewriting_target.size(0)
         nll_loss = nll_loss_each.mean()
         kl_loss = hparams.kl_factor * torch.nn.functional.kl_div(
             kl_distr_init, kl_log_probs, log_target=True, reduction="batchmean"
@@ -171,9 +164,7 @@ def compute_v(
     # Solving the linear system to compute the right vector
     right_vector = (target - cur_output) / torch.dot(cur_input, left_vector)
     print(f"Delta norm: {(target - cur_output).norm().item()}")
-    print(
-        f"Change in target norm: {target_init.norm().item()} to {target.norm().item()} => {(target.norm() - target_init.norm()).item()}"
-    )
+    print(f"Change in target norm: {target_init.norm().item()} to {target.norm().item()} => {(target.norm() - target_init.norm()).item()}")
     print(f"Division Factor: {torch.dot(cur_input, left_vector).item()}")
     print(f"Right vector norm: {right_vector.norm()}")
 
