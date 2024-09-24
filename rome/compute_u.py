@@ -32,9 +32,7 @@ def compute_u(
             hparams.mom2_dataset,
             hparams.mom2_n_samples,
             hparams.mom2_dtype,
-            stats_dir)
-        c_inv = c_inv.to(u)
-        u = c_inv @ u.unsqueeze(1)
-        u = u.squeeze()
+            stats_dir).to(u)
+        u = c_inv @ u
 
     return u / u.norm()
