@@ -5,8 +5,8 @@ import torch
 from transformers import PreTrainedModel, PreTrainedTokenizer
 
 from .hparams import ROMEHyperParams
-from .preserving import TextRomePreserving, TokenizedRomePreserving
-from .rewriting import TextRomeRewriting, TokenizedRomeRewriting
+from .preserving import TokenizedRomePreserving
+from .rewriting import TokenizedRomeRewriting
 from .utils import nethook
 from .utils.batching import stack_with_padding
 from .utils.hooks import StopForward, forward_output_hook
@@ -15,55 +15,43 @@ from .utils.nethook import get_module
 
 def compute_v(
     model: PreTrainedModel,
-    tokenizer: PreTrainedTokenizer,
-    rewriting: TextRomeRewriting,
-    preservings: Iterable[TextRomePreserving] | None,
+    rewriting: TokenizedRomeRewriting,
+    preservings: Iterable[TokenizedRomePreserving],
     hparams: ROMEHyperParams,
     layer: int,
     left_vector: torch.Tensor,
-    prefixes: list[str],
+    prefixes: list[np.ndarray],
 ) -> torch.Tensor:
     """
     Computes the value (right) vector for the rank-1 update.
     Runs a simple optimization procedure.
     """
-    if preservings is None:
-        preservings = [TextRomePreserving(
-            prompt=f"{rewriting.subject} is a ",
-            subject_head=0,
-            subject_tail=len(rewriting.subject)
-        )]
-
-    prefixes_tokenized = [np.asarray(tokenizer.encode(prefix), dtype=np.int64) for prefix in prefixes]
-    rewriting_tokenized = TokenizedRomeRewriting.from_text_rewriting(rewriting, tokenizer)
-    preservings_tokenized = [TokenizedRomePreserving.from_text_preserving(preserving, tokenizer) for preserving in
-                             preservings]
 
     rewritings_inputs = [
         np.concatenate([
-            prefix_tokenized,
-            rewriting_tokenized.prompt,
-            rewriting_tokenized.target])
-        for prefix_tokenized in prefixes_tokenized]
+            prefix,
+            rewriting.prompt,
+            rewriting.target])
+        for prefix in prefixes]
     rewritings_subject_token_index = [
-        (len(prefix_tokenized) + rewriting_tokenized.subject_tail - 1)
-        for prefix_tokenized in prefixes_tokenized]
+        (len(prefix) + rewriting.subject_tail - 1)
+        for prefix in prefixes]
     rewritings_target_tokens_prob_coo = [
-        (i, len(prefix_tokenized) + len(rewriting_tokenized.prompt) - 1 + j, target_token)
-        for j, target_token in enumerate(rewriting_tokenized.target)
-        for i, prefix_tokenized in enumerate(prefixes_tokenized)]
+        (i, len(prefix_tokenized) + len(rewriting.prompt) - 1 + j, target_token)
+        for j, target_token in enumerate(rewriting.target)
+        for i, prefix_tokenized in enumerate(prefixes)]
 
     preservings_inputs = [
         preserving.prompt
-        for preserving in preservings_tokenized]
+        for preserving in preservings]
     preservings_subject_token_index = [
         (preserving.subject_tail - 1)
-        for preserving in preservings_tokenized]
+        for preserving in preservings]
 
     all_in_tokens = stack_with_padding([
         *rewritings_inputs,
         *preservings_inputs,
-    ], tokenizer.pad_token_id)
+    ], 0)
     all_in_tokens = torch.asarray(all_in_tokens, dtype=torch.int64, device=model.device)
     all_in_subject_token_index = [
         *rewritings_subject_token_index,
@@ -76,12 +64,12 @@ def compute_v(
     def hook_func(_, inputs: tuple[torch.Tensor], output: torch.Tensor):
         input, = inputs
         nonlocal k, v
-        k = input[0, rewriting_tokenized.subject_tail - 1].clone()
-        v = output[0, rewriting_tokenized.subject_tail - 1].clone()
+        k = input[0, rewriting.subject_tail - 1].clone()
+        v = output[0, rewriting.subject_tail - 1].clone()
         raise StopForward()
 
     with torch.no_grad(), forward_output_hook(get_module(model, hparams.rewrite_module_tmp.format(layer)), hook_func):
-        model(torch.asarray(rewriting_tokenized.prompt, dtype=torch.int64, device=model.device))
+        model(torch.asarray(rewriting.prompt, dtype=torch.int64, device=model.device))
 
     assert isinstance(k, torch.Tensor)
     assert isinstance(v, torch.Tensor)
