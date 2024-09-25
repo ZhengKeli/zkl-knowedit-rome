@@ -16,7 +16,7 @@ def compute_left_right(
     tokenizer: PreTrainedTokenizer,
     rewriting: TextRomeRewriting,
     hparams: ROMEHyperParams,
-    stats_dir: str,
+    c_inv: torch.Tensor | None = None,
 ) -> tuple[torch.Tensor, torch.Tensor]:
     prefixes = list(iter_random_prefixes(model, tokenizer, hparams.context_template_length_params))
     prefixes_tokenized = [np.asarray(tokenizer.encode(prefix), dtype=np.int64) for prefix in prefixes]
@@ -47,15 +47,8 @@ def compute_left_right(
         preservings_tokenized,
         v)
 
-    if hparams.mom2_adjustment:
-        c_inv = compute_c_inv(
-            model,
-            tokenizer,
-            hparams.rewrite_module_tmp.format(hparams.layer),
-            hparams.mom2_dataset,
-            hparams.mom2_n_samples,
-            hparams.mom2_dtype,
-            stats_dir).to(k)
+    if c_inv is not None:
+        c_inv = c_inv.to(v)
         left = (c_inv @ k) / (k @ c_inv @ k)
     else:
         left = k / (k @ k)

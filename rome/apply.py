@@ -12,13 +12,13 @@ def apply_rome_to_model(
     tok: PreTrainedTokenizer,
     rewritings: list[TextRomeRewriting],
     hparams: ROMEHyperParams,
-    stats_dir: str,
+    c_inv: torch.Tensor | None = None,
 ):
     for i, rewriting in enumerate(rewritings):
         weight_name = f"{hparams.rewrite_module_tmp.format(hparams.layer)}.weight"
         weight = nethook.get_parameter(model, weight_name)
 
-        (left, right) = compute_left_right(model, tok, rewriting, hparams, stats_dir)
+        (left, right) = compute_left_right(model, tok, rewriting, hparams, c_inv)
 
         with torch.no_grad():
             delta_weight = torch.outer(left, right)
