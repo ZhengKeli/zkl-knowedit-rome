@@ -5,16 +5,16 @@ from transformers import PreTrainedModel
 from .hparams import ROMEHyperParams
 from .rewriting import TokenizedRomeRewriting
 from .utils import nethook
-from .utils.hooks import StopForward, forward_input_hook
+from .utils.hooks import StopForward, forward_output_hook
 
 
-def compute_k(
+def compute_kv(
     hparams: ROMEHyperParams,
     model: PreTrainedModel,
     layer: int,
     prefixes: list[np.ndarray],
     rewriting: TokenizedRomeRewriting,
-) -> torch.Tensor:
+) -> tuple[torch.Tensor, torch.Tensor]:
     prompts = [
         np.concatenate([prefix_tokenized, rewriting.prompt])
         for prefix_tokenized in prefixes]
@@ -25,26 +25,29 @@ def compute_k(
     module_name = hparams.rewrite_module_tmp.format(layer)
     module = nethook.get_module(model, module_name)
 
-    k_sum = None
-    k_num = 0
+    num = 0
+    k_sum = 0
+    v_sum = 0
 
     for prompt_tokenized, subject_token_index in zip(prompts, prompts_subject_token_index):
         prompt_tokenized = torch.asarray(prompt_tokenized, dtype=torch.int64, device=model.device)
         prompt_tokenized = prompt_tokenized.unsqueeze(0)
 
-        def hook_func(_, inputs: tuple[torch.Tensor]):
-            nonlocal k_sum, k_num
+        def hook_func(_, inputs: tuple[torch.Tensor], output: torch.Tensor):
+            nonlocal num, k_sum, v_sum
             k = inputs[0][0, subject_token_index].clone()
-            if k_sum is None:
-                k_sum = k
-                k_num = 1
-            else:
-                k_sum += k
-                k_num += 1
+            v = output[0, subject_token_index].clone()
+            k_sum += k
+            v_sum += v
+            num += 1
             raise StopForward()
 
-        with torch.no_grad(), forward_input_hook(module, hook_func):
+        with torch.no_grad(), forward_output_hook(module, hook_func):
             model(prompt_tokenized)
 
     assert isinstance(k_sum, torch.Tensor)
-    return k_sum / k_num
+    assert isinstance(v_sum, torch.Tensor)
+
+    k = k_sum / num
+    v = v_sum / num
+    return k, v
