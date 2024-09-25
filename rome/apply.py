@@ -3,7 +3,7 @@ from transformers import PreTrainedModel, PreTrainedTokenizer
 
 from .rewriting import TextRomeRewriting
 from .utils import nethook
-from .compute_uv import execute_rome
+from .compute_left_right import compute_left_right
 from .hparams import ROMEHyperParams
 
 
@@ -18,8 +18,8 @@ def apply_rome_to_model(
         weight_name = f"{hparams.rewrite_module_tmp.format(hparams.layer)}.weight"
         weight = nethook.get_parameter(model, weight_name)
 
-        (delta_u, delta_v) = execute_rome(model, tok, rewriting, hparams, stats_dir)
+        (left, right) = compute_left_right(model, tok, rewriting, hparams, stats_dir)
 
         with torch.no_grad():
-            delta_weight = torch.outer(delta_u, delta_v)
+            delta_weight = torch.outer(left, right)
             weight[...] += delta_weight

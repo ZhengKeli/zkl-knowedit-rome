@@ -11,7 +11,7 @@ from .preserving import TextRomePreserving, TokenizedRomePreserving
 from .rewriting import TextRomeRewriting, TokenizedRomeRewriting
 
 
-def execute_rome(
+def compute_left_right(
     model: PreTrainedModel,
     tokenizer: PreTrainedTokenizer,
     rewriting: TextRomeRewriting,
