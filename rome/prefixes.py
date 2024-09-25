@@ -1,6 +1,16 @@
 from typing import Iterable, Iterator
 
+import numpy as np
 from transformers import PreTrainedModel, PreTrainedTokenizer, pipeline
+
+
+def make_default_prefixes(
+    model: PreTrainedModel,
+    tokenizer: PreTrainedTokenizer,
+) -> tuple[np.ndarray, ...]:
+    prefixes = tuple(iter_random_prefixes(model, tokenizer, [(5, 10), (10, 10)]))
+    prefixes_tokenized = tuple(np.asarray(tokenizer.encode(prefix), dtype=np.int64) for prefix in prefixes)
+    return prefixes_tokenized
 
 
 def iter_random_prefixes(

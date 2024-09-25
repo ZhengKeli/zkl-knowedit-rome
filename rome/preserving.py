@@ -4,6 +4,8 @@ from typing import overload
 import numpy as np
 from transformers import PreTrainedTokenizer
 
+from .rewriting import TokenizedRomeRewriting
+
 
 @dataclass
 class TextRomePreserving:
@@ -76,3 +78,16 @@ class TokenizedRomePreserving:
             prompt=prompt_tokenized,
             subject_head=subject_head_tokenized,
             subject_tail=subject_tail_tokenized)
+
+
+def make_default_preservings(
+    tokenizer: PreTrainedTokenizer,
+    rewriting: TokenizedRomeRewriting,
+) -> tuple[TokenizedRomePreserving, ...]:
+    preserving = TokenizedRomePreserving(
+        prompt=np.concatenate([
+            rewriting.subject,
+            tokenizer.encode(" is a")]),
+        subject_head=0,
+        subject_tail=len(rewriting.subject))
+    return preserving,
