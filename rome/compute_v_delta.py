@@ -17,11 +17,13 @@ def compute_v_delta(
     hparams: ROMEHyperParams,
     model: PreTrainedModel,
     layer: int,
-    prefixes: list[np.ndarray],
+    prefixes: Iterable[np.ndarray],
     rewriting: TokenizedRomeRewriting,
     preservings: Iterable[TokenizedRomePreserving],
     v: torch.Tensor,
 ) -> torch.Tensor:
+    prefixes = tuple(prefixes)
+
     rewritings_inputs = [
         np.concatenate([
             prefix,

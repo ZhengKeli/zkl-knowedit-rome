@@ -19,6 +19,8 @@ def compute_left_right(
     hparams: ROMEHyperParams,
     c_inv: torch.Tensor | None = None,
 ) -> tuple[torch.Tensor, torch.Tensor]:
+    prefixes_tokenized = tuple(prefixes_tokenized)
+
     k, v = compute_kv(
         hparams,
         model,

@@ -1,3 +1,5 @@
+from typing import Iterable
+
 import numpy as np
 import torch
 from transformers import PreTrainedModel
@@ -12,9 +14,10 @@ def compute_kv(
     hparams: ROMEHyperParams,
     model: PreTrainedModel,
     layer: int,
-    prefixes: list[np.ndarray],
+    prefixes: Iterable[np.ndarray],
     rewriting: TokenizedRomeRewriting,
 ) -> tuple[torch.Tensor, torch.Tensor]:
+    prefixes = tuple(prefixes)
     prompts = [
         np.concatenate([prefix_tokenized, rewriting.prompt])
         for prefix_tokenized in prefixes]
