@@ -3,7 +3,7 @@ import torch
 from transformers import PreTrainedModel, PreTrainedTokenizer
 
 from .compute_left import compute_left
-from .compute_v import compute_v
+from .compute_right import compute_right
 from .hparams import ROMEHyperParams
 from .prefixes import iter_random_prefixes
 from .preserving import TextRomePreserving, TokenizedRomePreserving
@@ -38,7 +38,7 @@ def execute_rome(
         rewriting_tokenized,
         stats_dir)
 
-    v = compute_v(
+    right = compute_right(
         model,
         rewriting_tokenized,
         preservings_tokenized,
@@ -47,4 +47,4 @@ def execute_rome(
         left,
         prefixes_tokenized)
 
-    return left, v
+    return left, right

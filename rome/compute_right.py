@@ -13,7 +13,7 @@ from .utils.hooks import StopForward, forward_output_hook
 from .utils.nethook import get_module
 
 
-def compute_v(
+def compute_right(
     model: PreTrainedModel,
     rewriting: TokenizedRomeRewriting,
     preservings: Iterable[TokenizedRomePreserving],
