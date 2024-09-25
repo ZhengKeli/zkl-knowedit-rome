@@ -20,8 +20,7 @@ def apply_rome_to_model(
     preservings: Iterable[TokenizedRomePreserving],
     c_inv: torch.Tensor | None = None,
 ):
-    module_name = hparams.rewrite_module_tmp.format(hparams.layer)
-    module = nethook.get_module(model, module_name)
+    module = nethook.get_module(model, hparams.rewrite_module_name)
 
     (left, right) = compute_left_right(model, module, rewriting, prefixes, preservings, hparams.v_delta, c_inv)
     apply_left_right_to_module(module, left, right)

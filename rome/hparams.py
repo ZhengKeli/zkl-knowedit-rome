@@ -9,8 +9,7 @@ class RomeHparams:
     context_template_length_params: list[list[int]]
 
     # Module templates
-    layer: int
-    rewrite_module_tmp: str
+    rewrite_module_name: str
 
     # v delta
     v_delta: RomeComputeVDeltaHparams

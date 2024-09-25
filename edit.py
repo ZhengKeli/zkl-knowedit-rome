@@ -56,7 +56,7 @@ preservings_tokenized = make_default_preservings(tokenizer, rewriting_tokenized)
 c_inv = compute_c_inv(
     model,
     tokenizer,
-    hparams.rewrite_module_tmp.format(hparams.layer),
+    hparams.rewrite_module_name,
     hparams.mom2_dataset,
     hparams.mom2_n_samples,
     hparams.mom2_dtype,
