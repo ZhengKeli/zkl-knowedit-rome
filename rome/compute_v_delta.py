@@ -27,12 +27,12 @@ class RomeComputeVDeltaHparams:
 
 
 def compute_v_delta(
-    hparams: RomeComputeVDeltaHparams,
     model: PreTrainedModel,
     module: torch.nn.Module,
     prefixes: Iterable[np.ndarray],
     rewriting: TokenizedRomeRewriting,
     preservings: Iterable[TokenizedRomePreserving],
+    hparams: RomeComputeVDeltaHparams,
     v: torch.Tensor,
 ) -> torch.Tensor:
     prefixes = tuple(prefixes)

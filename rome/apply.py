@@ -20,10 +20,13 @@ def apply_rome_to_model(
     preservings: Iterable[TokenizedRomePreserving],
     c_inv: torch.Tensor | None = None,
 ):
+    module_name = hparams.rewrite_module_tmp.format(hparams.layer)
+    module = nethook.get_module(model, module_name)
+
     weight_name = f"{hparams.rewrite_module_tmp.format(hparams.layer)}.weight"
     weight = nethook.get_parameter(model, weight_name)
 
-    (left, right) = compute_left_right(hparams, model, rewriting, prefixes, preservings, c_inv)
+    (left, right) = compute_left_right(model, module, rewriting, prefixes, preservings, hparams.v_delta, c_inv)
 
     with torch.no_grad():
         delta_weight = torch.outer(left, right)
