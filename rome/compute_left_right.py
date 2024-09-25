@@ -2,9 +2,9 @@ import numpy as np
 import torch
 from transformers import PreTrainedModel, PreTrainedTokenizer
 
+from .compute_c import compute_c_inv
 from .compute_kv import compute_kv
-from .compute_left import compute_left
-from .compute_right import compute_right
+from .compute_v_delta import compute_v_delta
 from .hparams import ROMEHyperParams
 from .prefixes import iter_random_prefixes
 from .preserving import TextRomePreserving, TokenizedRomePreserving
@@ -38,20 +38,26 @@ def compute_left_right(
         prefixes_tokenized,
         rewriting_tokenized)
 
-    left = compute_left(
-        hparams,
-        model,
-        tokenizer,
-        stats_dir,
-        k)
+    if hparams.mom2_adjustment:
+        c_inv = compute_c_inv(
+            model,
+            tokenizer,
+            hparams.rewrite_module_tmp.format(hparams.layer),
+            hparams.mom2_dataset,
+            hparams.mom2_n_samples,
+            hparams.mom2_dtype,
+            stats_dir).to(k)
+        left = (c_inv @ k) / (k @ c_inv @ k)
+    else:
+        left = k / (k @ k)
 
-    right = compute_right(
-        model,
-        rewriting_tokenized,
-        preservings_tokenized,
+    right = compute_v_delta(
         hparams,
+        model,
         hparams.layer,
         prefixes_tokenized,
+        rewriting_tokenized,
+        preservings_tokenized,
         v)
 
     return left, right
