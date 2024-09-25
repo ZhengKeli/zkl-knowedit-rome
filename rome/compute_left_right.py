@@ -9,6 +9,7 @@ from .compute_v_delta import compute_v_delta
 from .hparams import ROMEHyperParams
 from .preserving import TokenizedRomePreserving
 from .rewriting import TokenizedRomeRewriting
+from .utils import nethook
 
 
 def compute_left_right(
@@ -21,10 +22,12 @@ def compute_left_right(
 ) -> tuple[torch.Tensor, torch.Tensor]:
     prefixes = tuple(prefixes)
 
+    module_name = hparams.rewrite_module_tmp.format(hparams.layer)
+    module = nethook.get_module(model, module_name)
+
     k, v = compute_kv(
-        hparams,
         model,
-        hparams.layer,
+        module,
         prefixes,
         rewriting)
 

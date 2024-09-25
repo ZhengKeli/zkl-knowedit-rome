@@ -4,16 +4,13 @@ import numpy as np
 import torch
 from transformers import PreTrainedModel
 
-from .hparams import ROMEHyperParams
 from .rewriting import TokenizedRomeRewriting
-from .utils import nethook
 from .utils.hooks import StopForward, forward_output_hook
 
 
 def compute_kv(
-    hparams: ROMEHyperParams,
     model: PreTrainedModel,
-    layer: int,
+    module: torch.nn.Module,
     prefixes: Iterable[np.ndarray],
     rewriting: TokenizedRomeRewriting,
 ) -> tuple[torch.Tensor, torch.Tensor]:
@@ -24,9 +21,6 @@ def compute_kv(
     prompts_subject_token_index = [
         len(prefix_tokenized) + rewriting.subject_tail - 1
         for prefix_tokenized in prefixes]
-
-    module_name = hparams.rewrite_module_tmp.format(layer)
-    module = nethook.get_module(model, module_name)
 
     num = 0
     k_sum = 0
