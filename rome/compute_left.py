@@ -12,8 +12,8 @@ def compute_left(
     stats_dir: str,
     k: torch.Tensor,
 ) -> torch.Tensor:
-    # Apply inverse second moment adjustment
     if hparams.mom2_adjustment:
+        # Apply inverse second moment adjustment
         c_inv = compute_c_inv(
             model,
             tokenizer,
@@ -22,8 +22,8 @@ def compute_left(
             hparams.mom2_n_samples,
             hparams.mom2_dtype,
             stats_dir).to(k)
-        left = c_inv @ k
+        left = (c_inv @ k) / (k @ c_inv @ k)
     else:
-        left = k
+        left = k / (k @ k)
 
-    return left / left.norm()
+    return left

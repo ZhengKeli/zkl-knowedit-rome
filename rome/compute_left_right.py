@@ -51,8 +51,7 @@ def compute_left_right(
         preservings_tokenized,
         hparams,
         hparams.layer,
-        left,
         prefixes_tokenized,
-        k, v)
+        v)
 
     return left, right
