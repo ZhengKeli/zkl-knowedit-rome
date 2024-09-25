@@ -6,7 +6,7 @@ import torch
 from transformers import Conv1D, PreTrainedModel
 
 from .compute_left_right import compute_left_right
-from .hparams import ROMEHyperParams
+from .hparams import RomeHparams
 from .preserving import TokenizedRomePreserving
 from .rewriting import TokenizedRomeRewriting
 from .utils import nethook
@@ -14,7 +14,7 @@ from .utils import nethook
 
 def apply_rome_to_model(
     model: PreTrainedModel,
-    hparams: ROMEHyperParams,
+    hparams: RomeHparams,
     rewriting: TokenizedRomeRewriting,
     prefixes: Iterable[np.ndarray],
     preservings: Iterable[TokenizedRomePreserving],

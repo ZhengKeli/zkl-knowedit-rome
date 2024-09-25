@@ -4,7 +4,7 @@ from .compute_v_delta import RomeComputeVDeltaHparams
 
 
 @dataclass(kw_only=True)
-class ROMEHyperParams:
+class RomeHparams:
     # Method
     context_template_length_params: list[list[int]]
 

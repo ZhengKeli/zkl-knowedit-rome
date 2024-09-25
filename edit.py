@@ -3,7 +3,7 @@ import os
 from transformers import AutoModelForCausalLM, AutoTokenizer, pipeline
 from zkl_serialization import load_and_parse_json
 
-from rome import ROMEHyperParams, TextRomeRewriting, TokenizedRomeRewriting, apply_rome_to_model, compute_c_inv, \
+from rome import RomeHparams, TextRomeRewriting, TokenizedRomeRewriting, apply_rome_to_model, compute_c_inv, \
     make_default_prefixes, make_default_preservings
 
 model_name = "gpt2-medium"
@@ -32,7 +32,7 @@ tokenizer.pad_token = tokenizer.eos_token
 
 print(f"Retrieving hyperparameters")
 print("Loading from", hparams_file_path)
-hparams = load_and_parse_json(hparams_file_path, ROMEHyperParams)
+hparams = load_and_parse_json(hparams_file_path, RomeHparams)
 print(hparams)
 
 print("Generating pre-update text")
