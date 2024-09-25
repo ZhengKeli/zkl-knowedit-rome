@@ -52,6 +52,7 @@ def execute_rome(
         hparams,
         hparams.layer,
         left,
-        prefixes_tokenized)
+        prefixes_tokenized,
+        k, v)
 
     return left, right
