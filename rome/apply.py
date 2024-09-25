@@ -35,7 +35,7 @@ def apply_rome_to_model(
         weight_name = f"{hparams.rewrite_module_tmp.format(hparams.layer)}.weight"
         weight = nethook.get_parameter(model, weight_name)
 
-        (left, right) = compute_left_right(model, rewriting_tokenized, prefixes_tokenized, preservings_tokenized, hparams, c_inv)
+        (left, right) = compute_left_right(hparams, model, rewriting_tokenized, prefixes_tokenized, preservings_tokenized, c_inv)
 
         with torch.no_grad():
             delta_weight = torch.outer(left, right)

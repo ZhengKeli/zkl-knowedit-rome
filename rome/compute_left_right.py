@@ -12,29 +12,29 @@ from .rewriting import TokenizedRomeRewriting
 
 
 def compute_left_right(
-    model: PreTrainedModel,
-    rewriting_tokenized: TokenizedRomeRewriting,
-    prefixes_tokenized: Iterable[np.ndarray],
-    preservings_tokenized: Iterable[TokenizedRomePreserving],
     hparams: ROMEHyperParams,
+    model: PreTrainedModel,
+    rewriting: TokenizedRomeRewriting,
+    prefixes: Iterable[np.ndarray],
+    preservings: Iterable[TokenizedRomePreserving],
     c_inv: torch.Tensor | None = None,
 ) -> tuple[torch.Tensor, torch.Tensor]:
-    prefixes_tokenized = tuple(prefixes_tokenized)
+    prefixes = tuple(prefixes)
 
     k, v = compute_kv(
         hparams,
         model,
         hparams.layer,
-        prefixes_tokenized,
-        rewriting_tokenized)
+        prefixes,
+        rewriting)
 
     v_delta = compute_v_delta(
         hparams,
         model,
         hparams.layer,
-        prefixes_tokenized,
-        rewriting_tokenized,
-        preservings_tokenized,
+        prefixes,
+        rewriting,
+        preservings,
         v)
 
     if c_inv is not None:
