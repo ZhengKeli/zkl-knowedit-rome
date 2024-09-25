@@ -22,10 +22,9 @@ STAT_TYPES = {
 
 def layer_stats(
     model,
-    tokenizer,
     layer_name,
     stats_dir,
-    ds_name,
+    dataset,
     to_collect,
     model_name=None,
     sample_size=None,
@@ -36,16 +35,6 @@ def layer_stats(
     """
     Function to load or compute cached stats.
     """
-
-    def get_ds():
-        raw_ds = load_dataset(
-            ds_name,
-            dict(wikitext="wikitext-103-raw-v1", wikipedia="20220301.en")[ds_name],
-            trust_remote_code=True)
-        maxlen = model.config.n_positions
-        if batch_tokens is not None and batch_tokens < maxlen:
-            maxlen = batch_tokens
-        return TokenizedDataset(raw_ds["train"], tokenizer, maxlen=maxlen)
 
     # Continue with computation of statistics
     batch_size = 100  # Examine this many dataset texts at once
@@ -62,10 +51,8 @@ def layer_stats(
         model_name = model.config._name_or_path.replace("/", "_")
 
     stats_dir = Path(stats_dir)
-    file_extension = f"{model_name}/{ds_name}_stats/{layer_name}_{precision}_{'-'.join(sorted(to_collect))}{size_suffix}.npz"
+    file_extension = f"{model_name}/stats/{layer_name}_{precision}_{'-'.join(sorted(to_collect))}{size_suffix}.npz"
     filename = stats_dir / file_extension
-
-    ds = get_ds() if not filename.exists() else None
 
     if progress is None:
         progress = lambda x: x
@@ -73,7 +60,7 @@ def layer_stats(
     stat = CombinedStat(**{k: STAT_TYPES[k]() for k in to_collect})
     loader = tally(
         stat,
-        ds,
+        dataset,
         cache=filename,
         sample_size=sample_size,
         batch_size=batch_size,
@@ -82,7 +69,7 @@ def layer_stats(
         random_sample=1,
         num_workers=2,
     )
-    batch_count = -(-(sample_size or len(ds)) // batch_size)
+    batch_count = -(-(sample_size or len(dataset)) // batch_size)
     with torch.no_grad():
         for batch_group in progress(loader, total=batch_count):
             for batch in batch_group:
