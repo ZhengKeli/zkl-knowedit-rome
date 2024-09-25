@@ -2,6 +2,7 @@ import numpy as np
 import torch
 from transformers import PreTrainedModel, PreTrainedTokenizer
 
+from .compute_kv import compute_kv
 from .compute_left import compute_left
 from .compute_right import compute_right
 from .hparams import ROMEHyperParams
@@ -30,13 +31,19 @@ def execute_rome(
         TokenizedRomePreserving.from_text_preserving(preserving, tokenizer)
         for preserving in preservings]
 
+    k, v = compute_kv(
+        hparams,
+        model,
+        hparams.layer,
+        prefixes_tokenized,
+        rewriting_tokenized)
+
     left = compute_left(
         hparams,
         model,
         tokenizer,
-        prefixes_tokenized,
-        rewriting_tokenized,
-        stats_dir)
+        stats_dir,
+        k)
 
     right = compute_right(
         model,
