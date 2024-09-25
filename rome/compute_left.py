@@ -8,7 +8,7 @@ from .hparams import ROMEHyperParams
 from .rewriting import TokenizedRomeRewriting
 
 
-def compute_u(
+def compute_left(
     hparams: ROMEHyperParams,
     model: PreTrainedModel,
     tokenizer: PreTrainedTokenizer,
@@ -16,7 +16,7 @@ def compute_u(
     rewriting: TokenizedRomeRewriting,
     stats_dir: str,
 ) -> torch.Tensor:
-    u = compute_k(
+    k = compute_k(
         hparams,
         model,
         hparams.layer,
@@ -32,7 +32,9 @@ def compute_u(
             hparams.mom2_dataset,
             hparams.mom2_n_samples,
             hparams.mom2_dtype,
-            stats_dir).to(u)
-        u = c_inv @ u
+            stats_dir).to(k)
+        left = c_inv @ k
+    else:
+        left = k
 
-    return u / u.norm()
+    return left / left.norm()

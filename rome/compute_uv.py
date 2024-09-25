@@ -2,7 +2,7 @@ import numpy as np
 import torch
 from transformers import PreTrainedModel, PreTrainedTokenizer
 
-from .compute_u import compute_u
+from .compute_left import compute_left
 from .compute_v import compute_v
 from .hparams import ROMEHyperParams
 from .prefixes import iter_random_prefixes
@@ -30,7 +30,7 @@ def execute_rome(
         TokenizedRomePreserving.from_text_preserving(preserving, tokenizer)
         for preserving in preservings]
 
-    u = compute_u(
+    left = compute_left(
         hparams,
         model,
         tokenizer,
@@ -44,7 +44,7 @@ def execute_rome(
         preservings_tokenized,
         hparams,
         hparams.layer,
-        u,
+        left,
         prefixes_tokenized)
 
-    return u, v
+    return left, v
