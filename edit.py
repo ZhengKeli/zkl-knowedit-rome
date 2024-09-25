@@ -4,7 +4,9 @@ from transformers import AutoModelForCausalLM, AutoTokenizer, pipeline
 from zkl_serialization import load_and_parse_json
 
 from rome import ROMEHyperParams, TextRomeRewriting, apply_rome_to_model
+from rome.apply import make_default_prefixes, make_default_preservings
 from rome.compute_c import compute_c_inv
+from rome.rewriting import TokenizedRomeRewriting
 
 model_name = "gpt2-medium"
 hparams_file_path = os.path.join("hparams/ROME/gpt2-medium.json")
@@ -48,6 +50,11 @@ del pipe
 print(pre_update_text)
 
 print(f"Applying ROME to model")
+
+rewriting_tokenized = TokenizedRomeRewriting.from_text_rewriting(rewriting, tokenizer)
+prefixes_tokenized = make_default_prefixes(model, tokenizer)
+preservings_tokenized = make_default_preservings(tokenizer, rewriting_tokenized)
+
 c_inv = compute_c_inv(
     model,
     tokenizer,
@@ -58,7 +65,7 @@ c_inv = compute_c_inv(
     stats_dir
 ) if hparams.mom2_adjustment else None
 
-apply_rome_to_model(model, tokenizer, rewriting, hparams, c_inv)
+apply_rome_to_model(model, hparams, rewriting_tokenized, prefixes_tokenized, preservings_tokenized, c_inv)
 
 print("Generating post-update text")
 pipe = pipeline("text-generation",
