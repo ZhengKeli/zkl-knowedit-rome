@@ -10,11 +10,10 @@ model_name = "gpt2-medium"
 hparams_file_path = os.path.join("hparams/ROME/gpt2-medium.json")
 stats_dir = "data/stats"
 
-rewritings = [TextRomeRewriting(
+rewriting = TextRomeRewriting(
     prompt="Steve Jobs is the founder of",
     subject="Steve Jobs",
-    target=" Microsoft"
-)]
+    target=" Microsoft")
 
 generation_prompts = [
     "My favorite Steve Jobs product is",
@@ -59,7 +58,7 @@ c_inv = compute_c_inv(
     stats_dir
 ) if hparams.mom2_adjustment else None
 
-apply_rome_to_model(model, tokenizer, rewritings, hparams, c_inv)
+apply_rome_to_model(model, tokenizer, rewriting, hparams, c_inv)
 
 print("Generating post-update text")
 pipe = pipeline("text-generation",
