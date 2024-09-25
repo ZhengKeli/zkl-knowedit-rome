@@ -16,7 +16,7 @@ from .utils.nethook import get_module
 def compute_v_delta(
     hparams: ROMEHyperParams,
     model: PreTrainedModel,
-    layer: int,
+    module: torch.nn.Module,
     prefixes: Iterable[np.ndarray],
     rewriting: TokenizedRomeRewriting,
     preservings: Iterable[TokenizedRomePreserving],
@@ -67,10 +67,9 @@ def compute_v_delta(
 
     # Execute optimization
     nethook.set_requires_grad(False, model)
-    edit_module = get_module(model, hparams.rewrite_module_tmp.format(layer))
     for it in range(hparams.v_num_grad_steps):
         # Forward propagation
-        with forward_output_hook(edit_module, edit_output_fn):
+        with forward_output_hook(module, edit_output_fn):
             all_out_tokens_logits = model(all_in_tokens).logits
 
         # Compute distribution for KL divergence
