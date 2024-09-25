@@ -38,6 +38,15 @@ def compute_left_right(
         prefixes_tokenized,
         rewriting_tokenized)
 
+    v_delta = compute_v_delta(
+        hparams,
+        model,
+        hparams.layer,
+        prefixes_tokenized,
+        rewriting_tokenized,
+        preservings_tokenized,
+        v)
+
     if hparams.mom2_adjustment:
         c_inv = compute_c_inv(
             model,
@@ -51,13 +60,6 @@ def compute_left_right(
     else:
         left = k / (k @ k)
 
-    right = compute_v_delta(
-        hparams,
-        model,
-        hparams.layer,
-        prefixes_tokenized,
-        rewriting_tokenized,
-        preservings_tokenized,
-        v)
+    right = v_delta
 
     return left, right
