@@ -1,19 +1,19 @@
 from dataclasses import dataclass
 
-from rome.compute_v_delta import RomeComputeVDeltaHparams
+from .compute_v_delta import RomeComputeVDeltaHparams
 
 
 @dataclass(kw_only=True)
 class ROMEHyperParams:
-    # v delta
-    v_delta: RomeComputeVDeltaHparams
-
     # Method
     context_template_length_params: list[list[int]]
 
     # Module templates
     layer: int
     rewrite_module_tmp: str
+
+    # v delta
+    v_delta: RomeComputeVDeltaHparams
 
     # Statistics
     mom2_adjustment: bool
