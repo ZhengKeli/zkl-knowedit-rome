@@ -1,36 +1,24 @@
+from typing import Iterable
+
 import numpy as np
 import torch
-from transformers import PreTrainedModel, PreTrainedTokenizer
+from transformers import PreTrainedModel
 
-from .compute_c import compute_c_inv
 from .compute_kv import compute_kv
 from .compute_v_delta import compute_v_delta
 from .hparams import ROMEHyperParams
-from .prefixes import iter_random_prefixes
-from .preserving import TextRomePreserving, TokenizedRomePreserving
-from .rewriting import TextRomeRewriting, TokenizedRomeRewriting
+from .preserving import TokenizedRomePreserving
+from .rewriting import TokenizedRomeRewriting
 
 
 def compute_left_right(
     model: PreTrainedModel,
-    tokenizer: PreTrainedTokenizer,
-    rewriting: TextRomeRewriting,
+    rewriting_tokenized: TokenizedRomeRewriting,
+    prefixes_tokenized: Iterable[np.ndarray],
+    preservings_tokenized: Iterable[TokenizedRomePreserving],
     hparams: ROMEHyperParams,
     c_inv: torch.Tensor | None = None,
 ) -> tuple[torch.Tensor, torch.Tensor]:
-    prefixes = list(iter_random_prefixes(model, tokenizer, hparams.context_template_length_params))
-    prefixes_tokenized = [np.asarray(tokenizer.encode(prefix), dtype=np.int64) for prefix in prefixes]
-    rewriting_tokenized = TokenizedRomeRewriting.from_text_rewriting(rewriting, tokenizer)
-
-    preservings = [TextRomePreserving(
-        prompt=f"{rewriting.subject} is a ",
-        subject_head=0,
-        subject_tail=len(rewriting.subject)
-    )]
-    preservings_tokenized = [
-        TokenizedRomePreserving.from_text_preserving(preserving, tokenizer)
-        for preserving in preservings]
-
     k, v = compute_kv(
         hparams,
         model,
