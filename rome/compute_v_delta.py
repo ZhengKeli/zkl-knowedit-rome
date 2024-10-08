@@ -14,11 +14,14 @@ from .utils.hooks import forward_output_hook
 
 @dataclass(kw_only=True)
 class RomeComputeVDeltaHparams:
-    v_num_grad_steps: int
-    v_lr: float
-    v_weight_decay: float
-    clamp_norm_factor: float
-    kl_factor: float
+    learning_rate: float
+
+    stopping_steps_num: int
+
+    preserving_loss_k: float
+
+    norm_regularization_factor: float
+    norm_constraining_factor: float
 
 
 def compute_v_delta(
@@ -62,7 +65,7 @@ def compute_v_delta(
         *preservings_subject_token_index]
 
     v_delta = torch.zeros_like(v, requires_grad=True)
-    optimizer = torch.optim.Adam([v_delta], lr=hparams.v_lr)
+    optimizer = torch.optim.Adam([v_delta], lr=hparams.learning_rate)
 
     v_norm = torch.norm(v)
     preservings_log_probs_init: torch.Tensor | None = None
@@ -75,7 +78,7 @@ def compute_v_delta(
 
     # Execute optimization
     nethook.set_requires_grad(False, model)
-    for it in range(hparams.v_num_grad_steps):
+    for it in range(hparams.stopping_steps_num):
         # Forward propagation
         with forward_output_hook(module, edit_output_fn):
             all_out_tokens_logits = model(all_in_tokens).logits
@@ -99,10 +102,10 @@ def compute_v_delta(
         rewriting_loss = -torch.mean(rewritings_out_tokens_log_prob)
 
         # Compute loss on regularization
-        regularization_loss = hparams.v_weight_decay * (torch.norm(v_delta) / v_norm ** 2)
-        # regularization_loss = hparams.v_weight_decay * torch.norm(v_delta) ** 2
+        regularization_loss = hparams.norm_regularization_factor * (torch.norm(v_delta) / v_norm ** 2)
+        # regularization_loss = hparams.norm_regularization_factor * torch.norm(v_delta) ** 2
 
-        loss = rewriting_loss + hparams.kl_factor * preserving_loss + regularization_loss
+        loss = rewriting_loss + hparams.preserving_loss_k * preserving_loss + regularization_loss
 
         print(", ".join([
             f"loss={loss.item():.3f}",
@@ -114,7 +117,7 @@ def compute_v_delta(
         if loss < 5e-2:
             break
 
-        if it == hparams.v_num_grad_steps - 1:
+        if it == hparams.stopping_steps_num - 1:
             break
 
         # Backpropagate
@@ -123,7 +126,7 @@ def compute_v_delta(
         optimizer.zero_grad()
 
         # Project within L2 ball
-        max_norm = hparams.clamp_norm_factor * v_norm
+        max_norm = hparams.norm_constraining_factor * v_norm
         if v_delta.norm() > max_norm:
             with torch.no_grad():
                 v_delta[...] = v_delta * max_norm / v_delta.norm()
