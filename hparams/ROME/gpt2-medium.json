@@ -1,10 +1,12 @@
 {
     "layer": 8,
-    "v_num_grad_steps": 20,
-    "v_lr": 5e-1,
-    "v_weight_decay": 0.5,
-    "clamp_norm_factor": 3,
-    "kl_factor": 0.0625,
+    "v_delta": {
+      "v_num_grad_steps": 20,
+      "v_lr": 5e-1,
+      "v_weight_decay": 0.5,
+      "clamp_norm_factor": 3,
+      "kl_factor": 0.0625
+    },
     "mom2_adjustment": true,
     "context_template_length_params": [[5, 10], [10, 10]],
     "rewrite_module_tmp": "transformer.h.{}.mlp.c_proj",

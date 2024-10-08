@@ -1,14 +1,14 @@
 from dataclasses import dataclass
 
+from rome.compute_v_delta import RomeComputeVDeltaHparams
+
 
 @dataclass(kw_only=True)
 class ROMEHyperParams:
+    # v delta
+    v_delta: RomeComputeVDeltaHparams
+
     # Method
-    v_num_grad_steps: int
-    v_lr: float
-    v_weight_decay: float
-    clamp_norm_factor: float
-    kl_factor: float
     context_template_length_params: list[list[int]]
 
     # Module templates

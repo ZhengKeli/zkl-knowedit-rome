@@ -1,10 +1,10 @@
+from dataclasses import dataclass
 from typing import Iterable
 
 import numpy as np
 import torch
 from transformers import PreTrainedModel
 
-from .hparams import ROMEHyperParams
 from .preserving import TokenizedRomePreserving
 from .rewriting import TokenizedRomeRewriting
 from .utils import nethook
@@ -12,8 +12,17 @@ from .utils.batching import stack_with_padding
 from .utils.hooks import forward_output_hook
 
 
+@dataclass(kw_only=True)
+class RomeComputeVDeltaHparams:
+    v_num_grad_steps: int
+    v_lr: float
+    v_weight_decay: float
+    clamp_norm_factor: float
+    kl_factor: float
+
+
 def compute_v_delta(
-    hparams: ROMEHyperParams,
+    hparams: RomeComputeVDeltaHparams,
     model: PreTrainedModel,
     module: torch.nn.Module,
     prefixes: Iterable[np.ndarray],
