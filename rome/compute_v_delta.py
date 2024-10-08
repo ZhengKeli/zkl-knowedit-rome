@@ -10,7 +10,6 @@ from .rewriting import TokenizedRomeRewriting
 from .utils import nethook
 from .utils.batching import stack_with_padding
 from .utils.hooks import forward_output_hook
-from .utils.nethook import get_module
 
 
 def compute_v_delta(
@@ -53,16 +52,16 @@ def compute_v_delta(
         *rewritings_subject_token_index,
         *preservings_subject_token_index]
 
-    delta = torch.zeros_like(v, requires_grad=True)
-    optimizer = torch.optim.Adam([delta], lr=hparams.v_lr)
+    v_delta = torch.zeros_like(v, requires_grad=True)
+    optimizer = torch.optim.Adam([v_delta], lr=hparams.v_lr)
 
     v_norm = torch.norm(v)
     preservings_log_probs_init: torch.Tensor | None = None
 
-    # Inserts new "delta" variable at the appropriate part of the computation
+    # Inserts new "v_delta" variable at the appropriate part of the computation
     def edit_output_fn(_, __, output: torch.Tensor) -> torch.Tensor:
         for i, idx in enumerate(all_in_subject_token_index):
-            output[i, idx, :] += delta
+            output[i, idx, :] += v_delta
         return output
 
     # Execute optimization
@@ -91,8 +90,8 @@ def compute_v_delta(
         rewriting_loss = -torch.mean(rewritings_out_tokens_log_prob)
 
         # Compute loss on regularization
-        regularization_loss = hparams.v_weight_decay * (torch.norm(delta) / v_norm ** 2)
-        # regularization_loss = hparams.v_weight_decay * torch.norm(delta) ** 2
+        regularization_loss = hparams.v_weight_decay * (torch.norm(v_delta) / v_norm ** 2)
+        # regularization_loss = hparams.v_weight_decay * torch.norm(v_delta) ** 2
 
         loss = rewriting_loss + hparams.kl_factor * preserving_loss + regularization_loss
 
@@ -116,8 +115,8 @@ def compute_v_delta(
 
         # Project within L2 ball
         max_norm = hparams.clamp_norm_factor * v_norm
-        if delta.norm() > max_norm:
+        if v_delta.norm() > max_norm:
             with torch.no_grad():
-                delta[...] = delta * max_norm / delta.norm()
+                v_delta[...] = v_delta * max_norm / v_delta.norm()
 
-    return delta
+    return v_delta
