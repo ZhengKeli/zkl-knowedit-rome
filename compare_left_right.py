@@ -2,7 +2,7 @@ import os
 
 import numpy as np
 import torch
-from transformers import AutoModelForCausalLM, AutoTokenizer, PreTrainedTokenizer
+from transformers import AutoModelForCausalLM, AutoTokenizer, PreTrainedModel, PreTrainedTokenizer
 from zkl_serialization import load_and_parse_json
 
 from rome import ROMEHyperParams, TextRomeRewriting, compute_left_right
@@ -43,9 +43,14 @@ print(hparams)
 
 print(f"Applying ROME to model")
 
-rewriting_tokenized = TokenizedRomeRewriting.from_text_rewriting(rewriting, tokenizer)
-prefixes = iter_random_prefixes(model, tokenizer, hparams.context_template_length_params)
-prefixes_tokenized = [np.asarray(tokenizer.encode(prefix), dtype=np.int64) for prefix in prefixes]
+
+def make_default_prefixes(
+    model: PreTrainedModel,
+    tokenizer: PreTrainedTokenizer,
+) -> tuple[np.ndarray, ...]:
+    prefixes = tuple(iter_random_prefixes(model, tokenizer, [(5, 10), (10, 10)]))
+    prefixes_tokenized = tuple(np.asarray(tokenizer.encode(prefix), dtype=np.int64) for prefix in prefixes)
+    return prefixes_tokenized
 
 
 def make_default_preservings(
@@ -59,6 +64,10 @@ def make_default_preservings(
         subject_head=0,
         subject_tail=len(rewriting.subject))
     return preserving,
+
+
+rewriting_tokenized = TokenizedRomeRewriting.from_text_rewriting(rewriting, tokenizer)
+prefixes_tokenized = make_default_prefixes(model, tokenizer)
 preservings_tokenized = make_default_preservings(tokenizer, rewriting_tokenized)
 
 c_inv = compute_c_inv(
