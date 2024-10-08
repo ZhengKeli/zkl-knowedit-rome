@@ -2,13 +2,12 @@ import os
 
 import numpy as np
 import torch
-from transformers import AutoModelForCausalLM, AutoTokenizer, PreTrainedModel, PreTrainedTokenizer
+from transformers import AutoModelForCausalLM, AutoTokenizer
 from zkl_serialization import load_and_parse_json
 
 from rome import ROMEHyperParams, TextRomeRewriting, compute_left_right
+from rome.apply import make_default_prefixes, make_default_preservings
 from rome.compute_c import compute_c_inv
-from rome.prefixes import iter_random_prefixes
-from rome.preserving import TokenizedRomePreserving
 from rome.rewriting import TokenizedRomeRewriting
 from rome.utils import nethook
 
@@ -42,29 +41,6 @@ hparams = load_and_parse_json(hparams_file_path, ROMEHyperParams)
 print(hparams)
 
 print(f"Applying ROME to model")
-
-
-def make_default_prefixes(
-    model: PreTrainedModel,
-    tokenizer: PreTrainedTokenizer,
-) -> tuple[np.ndarray, ...]:
-    prefixes = tuple(iter_random_prefixes(model, tokenizer, [(5, 10), (10, 10)]))
-    prefixes_tokenized = tuple(np.asarray(tokenizer.encode(prefix), dtype=np.int64) for prefix in prefixes)
-    return prefixes_tokenized
-
-
-def make_default_preservings(
-    tokenizer: PreTrainedTokenizer,
-    rewriting: TokenizedRomeRewriting,
-) -> tuple[TokenizedRomePreserving, ...]:
-    preserving = TokenizedRomePreserving(
-        prompt=np.concatenate([
-            rewriting.subject,
-            tokenizer.encode(" is a")]),
-        subject_head=0,
-        subject_tail=len(rewriting.subject))
-    return preserving,
-
 
 rewriting_tokenized = TokenizedRomeRewriting.from_text_rewriting(rewriting, tokenizer)
 prefixes_tokenized = make_default_prefixes(model, tokenizer)
