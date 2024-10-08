@@ -1,7 +1,10 @@
+import numpy as np
 import torch
 from transformers import PreTrainedModel, PreTrainedTokenizer
 
-from .rewriting import TextRomeRewriting
+from .prefixes import iter_random_prefixes
+from .preserving import TextRomePreserving, TokenizedRomePreserving
+from .rewriting import TextRomeRewriting, TokenizedRomeRewriting
 from .utils import nethook
 from .compute_left_right import compute_left_right
 from .hparams import ROMEHyperParams
@@ -9,17 +12,30 @@ from .hparams import ROMEHyperParams
 
 def apply_rome_to_model(
     model: PreTrainedModel,
-    tok: PreTrainedTokenizer,
-    rewritings: list[TextRomeRewriting],
+    tokenizer: PreTrainedTokenizer,
+    rewriting: TextRomeRewriting,
     hparams: ROMEHyperParams,
-    stats_dir: str,
+    c_inv: torch.Tensor | None = None,
 ):
-    for i, rewriting in enumerate(rewritings):
-        weight_name = f"{hparams.rewrite_module_tmp.format(hparams.layer)}.weight"
-        weight = nethook.get_parameter(model, weight_name)
+    prefixes = list(iter_random_prefixes(model, tokenizer, hparams.context_template_length_params))
+    prefixes_tokenized = [np.asarray(tokenizer.encode(prefix), dtype=np.int64) for prefix in prefixes]
 
-        (left, right) = compute_left_right(model, tok, rewriting, hparams, stats_dir)
+    preservings = [TextRomePreserving(
+        prompt=f"{rewriting.subject} is a ",
+        subject_head=0,
+        subject_tail=len(rewriting.subject)
+    )]
 
-        with torch.no_grad():
-            delta_weight = torch.outer(left, right)
-            weight[...] += delta_weight
+    rewriting_tokenized = TokenizedRomeRewriting.from_text_rewriting(rewriting, tokenizer)
+    preservings_tokenized = [
+        TokenizedRomePreserving.from_text_preserving(preserving, tokenizer)
+        for preserving in preservings]
+
+    weight_name = f"{hparams.rewrite_module_tmp.format(hparams.layer)}.weight"
+    weight = nethook.get_parameter(model, weight_name)
+
+    (left, right) = compute_left_right(hparams, model, rewriting_tokenized, prefixes_tokenized, preservings_tokenized, c_inv)
+
+    with torch.no_grad():
+        delta_weight = torch.outer(left, right)
+        weight[...] += delta_weight

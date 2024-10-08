@@ -2,10 +2,13 @@ import os
 
 import numpy as np
 import torch
-from transformers import AutoModelForCausalLM, AutoTokenizer
+from transformers import AutoModelForCausalLM, AutoTokenizer, PreTrainedTokenizer
 from zkl_serialization import load_and_parse_json
 
 from rome import ROMEHyperParams, TextRomeRewriting, compute_left_right
+from rome.compute_c import compute_c_inv
+from rome.prefixes import iter_random_prefixes
+from rome.preserving import TokenizedRomePreserving
 from rome.rewriting import TokenizedRomeRewriting
 from rome.utils import nethook
 
@@ -41,22 +44,36 @@ print(hparams)
 print(f"Applying ROME to model")
 
 rewriting_tokenized = TokenizedRomeRewriting.from_text_rewriting(rewriting, tokenizer)
-# prefixes_tokenized = make_default_prefixes(model, tokenizer)
-# preservings_tokenized = make_default_preservings(tokenizer, rewriting_tokenized)
+prefixes = iter_random_prefixes(model, tokenizer, hparams.context_template_length_params)
+prefixes_tokenized = [np.asarray(tokenizer.encode(prefix), dtype=np.int64) for prefix in prefixes]
 
-# c_inv = compute_c_inv(
-#     model,
-#     tokenizer,
-#     hparams.rewrite_module_name,
-#     hparams.mom2_dataset,
-#     hparams.mom2_n_samples,
-#     hparams.mom2_dtype,
-#     stats_dir
-# ) if hparams.mom2_adjustment else None
+
+def make_default_preservings(
+    tokenizer: PreTrainedTokenizer,
+    rewriting: TokenizedRomeRewriting,
+) -> tuple[TokenizedRomePreserving, ...]:
+    preserving = TokenizedRomePreserving(
+        prompt=np.concatenate([
+            rewriting.subject,
+            tokenizer.encode(" is a")]),
+        subject_head=0,
+        subject_tail=len(rewriting.subject))
+    return preserving,
+preservings_tokenized = make_default_preservings(tokenizer, rewriting_tokenized)
+
+c_inv = compute_c_inv(
+    model,
+    tokenizer,
+    hparams.rewrite_module_tmp.format(hparams.layer),
+    hparams.mom2_dataset,
+    hparams.mom2_n_samples,
+    hparams.mom2_dtype,
+    stats_dir
+) if hparams.mom2_adjustment else None
 
 module = nethook.get_module(model, hparams.rewrite_module_tmp.format(hparams.layer))
 
-(left, right) = compute_left_right(model, tokenizer, rewriting, hparams, stats_dir)
+(left, right) = compute_left_right(hparams, model, rewriting_tokenized, prefixes_tokenized, preservings_tokenized, c_inv)
 delta_weight = torch.outer(left, right)
 
 left_original = np.load("../zkl-knowedit-rome-original/left.npy")
