@@ -9,54 +9,8 @@ from .preserving import TokenizedRomePreserving
 from .rewriting import TokenizedRomeRewriting
 from .utils import nethook
 from .utils.batching import stack_with_padding
-from .utils.hooks import StopForward, forward_output_hook
+from .utils.hooks import forward_output_hook
 from .utils.nethook import get_module
-
-
-def compute_v(
-    model: PreTrainedModel,
-    rewriting: TokenizedRomeRewriting,
-    preservings: Iterable[TokenizedRomePreserving],
-    hparams: ROMEHyperParams,
-    layer: int,
-    left_vector: torch.Tensor,
-    prefixes: list[np.ndarray],
-) -> torch.Tensor:
-    k: torch.Tensor | None = None
-    v: torch.Tensor | None = None
-
-    def hook_func(_, inputs: tuple[torch.Tensor], output: torch.Tensor):
-        input, = inputs
-        nonlocal k, v
-        k = input[0, rewriting.subject_tail - 1].clone()
-        v = output[0, rewriting.subject_tail - 1].clone()
-        raise StopForward()
-
-    with torch.no_grad(), forward_output_hook(get_module(model, hparams.rewrite_module_tmp.format(layer)), hook_func):
-        model(torch.asarray(rewriting.prompt, dtype=torch.int64, device=model.device))
-
-    assert isinstance(k, torch.Tensor)
-    assert isinstance(v, torch.Tensor)
-
-    v_delta = compute_v_delta(
-        hparams,
-        model,
-        layer,
-        prefixes,
-        rewriting,
-        preservings,
-        v)
-
-    v_star = v + v_delta
-
-    # Solving the linear system to compute the right vector
-    right_vector = v_delta / torch.dot(k, left_vector)
-    print(f"Delta norm: {(v_star - v).norm().item()}")
-    print(f"Change in target norm: {v.norm().item()} to {v_star.norm().item()} => {(v_star.norm() - v.norm()).item()}")
-    print(f"Division Factor: {torch.dot(k, left_vector).item()}")
-    print(f"Right vector norm: {right_vector.norm()}")
-
-    return right_vector
 
 
 def compute_v_delta(

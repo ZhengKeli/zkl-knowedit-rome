@@ -2,15 +2,16 @@ import numpy as np
 import torch
 from transformers import PreTrainedModel, PreTrainedTokenizer
 
-from .compute_u import compute_u
-from .compute_v import compute_v
+from .compute_kv import compute_kv
+from .compute_left import compute_left
+from .compute_right import compute_right
 from .hparams import ROMEHyperParams
 from .prefixes import iter_random_prefixes
 from .preserving import TextRomePreserving, TokenizedRomePreserving
 from .rewriting import TextRomeRewriting, TokenizedRomeRewriting
 
 
-def execute_rome(
+def compute_left_right(
     model: PreTrainedModel,
     tokenizer: PreTrainedTokenizer,
     rewriting: TextRomeRewriting,
@@ -30,21 +31,28 @@ def execute_rome(
         TokenizedRomePreserving.from_text_preserving(preserving, tokenizer)
         for preserving in preservings]
 
-    u = compute_u(
+    k, v = compute_kv(
+        hparams,
+        model,
+        hparams.layer,
+        prefixes_tokenized,
+        rewriting_tokenized)
+
+    left = compute_left(
         hparams,
         model,
         tokenizer,
-        prefixes_tokenized,
-        rewriting_tokenized,
-        stats_dir)
+        stats_dir,
+        k)
 
-    v = compute_v(
+    right = compute_right(
         model,
         rewriting_tokenized,
         preservings_tokenized,
         hparams,
         hparams.layer,
-        u,
-        prefixes_tokenized)
+        left,
+        prefixes_tokenized,
+        k, v)
 
-    return u, v
+    return left, right

@@ -5,7 +5,7 @@ import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from zkl_serialization import load_and_parse_json
 
-from rome import ROMEHyperParams, TextRomeRewriting, execute_rome
+from rome import ROMEHyperParams, TextRomeRewriting, compute_left_right
 from rome.rewriting import TokenizedRomeRewriting
 from rome.utils import nethook
 
@@ -56,7 +56,7 @@ rewriting_tokenized = TokenizedRomeRewriting.from_text_rewriting(rewriting, toke
 
 module = nethook.get_module(model, hparams.rewrite_module_tmp.format(hparams.layer))
 
-(left, right) = execute_rome(model, tokenizer, rewriting, hparams, stats_dir)
+(left, right) = compute_left_right(model, tokenizer, rewriting, hparams, stats_dir)
 delta_weight = torch.outer(left, right)
 
 left_original = np.load("../zkl-knowedit-rome-original/left.npy")
