@@ -4,7 +4,7 @@
         "learning_rate": 5e-1,
         "stopping_steps_num": 20,
         "preserving_loss_k": 0.0625,
-        "norm_regularization_factor": 0.5,
+        "regularization_loss_k": 0.5,
         "norm_constraining_factor": 4
     },
     "mom2_adjustment": true,
