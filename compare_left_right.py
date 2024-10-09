@@ -5,11 +5,7 @@ import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from zkl_serialization import load_and_parse_json
 
-from rome import ROMEHyperParams, TextRomeRewriting, compute_left_right
-from rome.apply import make_default_prefixes, make_default_preservings
-from rome.compute_c import compute_c_inv
-from rome.rewriting import TokenizedRomeRewriting
-from rome.utils import nethook
+from rome import RomeHparams, TextRomeRewriting, TokenizedRomeRewriting, compute_c_inv, compute_left_right, make_default_prefixes, make_default_preservings
 
 model_name = "gpt2-medium"
 hparams_file_path = os.path.join("hparams/ROME/gpt2-medium.json")
@@ -37,7 +33,7 @@ tokenizer.pad_token = tokenizer.eos_token
 
 print(f"Retrieving hyperparameters")
 print("Loading from", hparams_file_path)
-hparams = load_and_parse_json(hparams_file_path, ROMEHyperParams)
+hparams = load_and_parse_json(hparams_file_path, RomeHparams)
 print(hparams)
 
 print(f"Applying ROME to model")
@@ -49,16 +45,16 @@ preservings_tokenized = make_default_preservings(tokenizer, rewriting_tokenized)
 c_inv = compute_c_inv(
     model,
     tokenizer,
-    hparams.rewrite_module_tmp.format(hparams.layer),
+    hparams.rewrite_module_name,
     hparams.mom2_dataset,
     hparams.mom2_n_samples,
     hparams.mom2_dtype,
     stats_dir
 ) if hparams.mom2_adjustment else None
 
-module = nethook.get_module(model, hparams.rewrite_module_tmp.format(hparams.layer))
+module = model.get_submodule(hparams.rewrite_module_name)
 
-(left, right) = compute_left_right(hparams, model, rewriting_tokenized, prefixes_tokenized, preservings_tokenized, c_inv)
+(left, right) = compute_left_right(model, module, rewriting_tokenized, prefixes_tokenized, preservings_tokenized, hparams.v_delta, c_inv)
 delta_weight = torch.outer(left, right)
 
 left_original = np.load("../zkl-knowedit-rome-original/left.npy")
