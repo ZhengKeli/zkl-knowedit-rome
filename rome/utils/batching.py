@@ -1,30 +1,46 @@
-from typing import Iterable
+from typing import Iterable, Literal
 
 import numpy as np
 from numpy.typing import ArrayLike
 
 
-def stack_with_padding(
-    arrays: Iterable[np.ndarray],
-    pad: ArrayLike, *,
+def stack_with_aligning(
+    arrays: Iterable[np.ndarray], *,
+    size: int | Literal['max', 'min'] | None = None,
+    pad: ArrayLike | None = None,
     return_mask: bool = False
 ) -> np.ndarray | tuple[np.ndarray, np.ndarray]:
     arrays = tuple(arrays)
-    max_len = max(len(array) for array in arrays)
 
-    arrays_padded = []
+    if size is None:
+        if pad is None:
+            size = 'min'
+        else:
+            size = 'max'
+
+    if size == 'max':
+        size = max(len(array) for array in arrays)
+    if size == 'min':
+        size = min(len(array) for array in arrays)
+
+    arrays_aligned = []
     for array in arrays:
-        array_pad = np.full([max_len - len(array), *array.shape[1:]], pad, dtype=array.dtype)
-        array_padded = np.concatenate([array, array_pad])
-        arrays_padded.append(array_padded)
+        if len(array) < size:
+            array_pad = np.broadcast_to(np.asarray(pad, dtype=array.dtype), [size - len(array), *array.shape[1:]])
+            array_aligned = np.concatenate([array, array_pad])
+        elif len(array) > size:
+            array_aligned = array[:size]
+        else:
+            array_aligned = array
+        arrays_aligned.append(array_aligned)
 
     if not return_mask:
-        return np.stack(arrays_padded)
+        return np.stack(arrays_aligned)
 
     arrays_mask = []
     for array in arrays:
         array_ones = np.ones_like(array, dtype=bool)
-        array_zeros = np.zeros([max_len - len(array), *array.shape[1:]], dtype=bool)
+        array_zeros = np.zeros([size - len(array), *array.shape[1:]], dtype=bool)
         array_mask = np.concatenate([array_ones, array_zeros])
         arrays_mask.append(array_mask)
-    return np.stack(arrays_padded), np.stack(arrays_mask)
+    return np.stack(arrays_aligned), np.stack(arrays_mask)

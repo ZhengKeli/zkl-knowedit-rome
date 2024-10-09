@@ -9,7 +9,7 @@ from transformers import PreTrainedModel
 from .preserving import TokenizedRomePreserving
 from .rewriting import TokenizedRomeRewriting
 from .utils import nethook
-from .utils.batching import stack_with_padding
+from .utils.batching import stack_with_aligning
 from .utils.hooks import forward_output_hook
 
 
@@ -58,10 +58,10 @@ def compute_v_delta(
         (preserving.subject_tail - 1)
         for preserving in preservings]
 
-    all_in_tokens = torch.asarray(stack_with_padding([
+    all_in_tokens = torch.asarray(stack_with_aligning([
         *rewritings_inputs,
         *preservings_inputs,
-    ], 0), dtype=torch.int64, device=model.device)
+    ], pad=0), dtype=torch.int64, device=model.device)
     all_in_subject_token_index = [
         *rewritings_subject_token_index,
         *preservings_subject_token_index]
