@@ -39,16 +39,21 @@ def stack_with_aligning(
 
     arrays_mask = []
     for array in arrays:
-        array_ones = np.ones_like(array, dtype=bool)
-        array_zeros = np.zeros([size - len(array), *array.shape[1:]], dtype=bool)
-        array_mask = np.concatenate([array_ones, array_zeros])
+        if len(array) < size:
+            array_ones = np.ones_like(array, dtype=bool)
+            array_zeros = np.zeros([size - len(array), *array.shape[1:]], dtype=bool)
+            array_mask = np.concatenate([array_ones, array_zeros])
+        elif len(array) > size:
+            array_mask = np.ones([size, *array.shape[1:]], dtype=bool)
+        else:
+            array_mask = np.ones_like(array, dtype=bool)
         arrays_mask.append(array_mask)
     return np.stack(arrays_aligned), np.stack(arrays_mask)
 
 
 def iter_by_batch(
     arrays: Iterable[np.ndarray], *,
-    pad: ArrayLike,
+    pad: ArrayLike = 0,
     batch_len: int,
     batch_size: int,
     return_mask: bool = False
