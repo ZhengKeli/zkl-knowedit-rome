@@ -1,52 +1,44 @@
+import warnings
 from typing import Iterable
 
 import numpy as np
 import torch
-from transformers import PreTrainedModel, PreTrainedTokenizer
+from transformers import Conv1D, PreTrainedModel
 
 from .compute_left_right import compute_left_right
-from .hparams import ROMEHyperParams
-from .prefixes import iter_random_prefixes
+from .hparams import RomeHparams
 from .preserving import TokenizedRomePreserving
 from .rewriting import TokenizedRomeRewriting
-from .utils import nethook
 
 
 def apply_rome_to_model(
     model: PreTrainedModel,
-    hparams: ROMEHyperParams,
+    hparams: RomeHparams,
     rewriting: TokenizedRomeRewriting,
     prefixes: Iterable[np.ndarray],
     preservings: Iterable[TokenizedRomePreserving],
     c_inv: torch.Tensor | None = None,
 ):
-    weight_name = f"{hparams.rewrite_module_tmp.format(hparams.layer)}.weight"
-    weight = nethook.get_parameter(model, weight_name)
+    module = model.get_submodule(hparams.rewrite_module_name)
 
-    (left, right) = compute_left_right(hparams, model, rewriting, prefixes, preservings, c_inv)
-
-    with torch.no_grad():
-        delta_weight = torch.outer(left, right)
-        weight[...] += delta_weight
+    (left, right) = compute_left_right(model, module, rewriting, prefixes, preservings, hparams.v_delta, c_inv)
+    apply_left_right_to_module(module, left, right)
 
 
-def make_default_prefixes(
-    model: PreTrainedModel,
-    tokenizer: PreTrainedTokenizer,
-) -> tuple[np.ndarray, ...]:
-    prefixes = tuple(iter_random_prefixes(model, tokenizer, [(5, 10), (10, 10)]))
-    prefixes_tokenized = tuple(np.asarray(tokenizer.encode(prefix), dtype=np.int64) for prefix in prefixes)
-    return prefixes_tokenized
+def apply_left_right_to_module(
+    module: torch.nn.Module,
+    left: torch.Tensor,
+    right: torch.Tensor,
+):
+    if isinstance(module, Conv1D):
+        module.weight.data.add_(torch.outer(left, right))
+    elif isinstance(module, (torch.nn.Linear, torch.nn.LazyLinear)):
+        module.weight.data.add_(torch.outer(right, left))
+    else:
+        def hook(_: torch.nn.Module, inputs: tuple[torch.Tensor, ...], output: torch.Tensor):
+            k = inputs[0]
+            v_delta = torch.sum(k * left, dim=-1, keepdim=True) * right
+            return output + v_delta
 
-
-def make_default_preservings(
-    tokenizer: PreTrainedTokenizer,
-    rewriting: TokenizedRomeRewriting,
-) -> tuple[TokenizedRomePreserving, ...]:
-    preserving = TokenizedRomePreserving(
-        prompt=np.concatenate([
-            rewriting.subject,
-            tokenizer.encode(" is a")]),
-        subject_head=0,
-        subject_tail=len(rewriting.subject))
-    return preserving,
+        module.register_forward_hook(hook)
+        warnings.warn(f"Not recognized module type {module}, fallback to use hook.")

@@ -1,7 +1,9 @@
 import torch
+from datasets import load_dataset
 from transformers import PreTrainedModel, PreTrainedTokenizer
 
 from .layer_stats import layer_stats
+from .tok_dataset import TokenizedDataset
 
 inv_mom2_cache = {}
 
@@ -41,12 +43,18 @@ def compute_c(
     mom2_n_samples: str,
     cache_dir: str
 ):
+    raw_ds = load_dataset(
+        mom2_dataset,
+        dict(wikitext="wikitext-103-raw-v1", wikipedia="20220301.en")[mom2_dataset],
+        trust_remote_code=True)
+    maxlen = model.config.n_positions
+    dataset = TokenizedDataset(raw_ds["train"], tokenizer, maxlen=maxlen)
+
     stat = layer_stats(
         model,
-        tokenizer,
         layer_name,
         cache_dir,
-        mom2_dataset,
+        dataset,
         to_collect=["mom2"],
         sample_size=mom2_n_samples,
         precision=mom2_dtype,

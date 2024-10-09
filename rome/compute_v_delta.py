@@ -27,12 +27,12 @@ class RomeComputeVDeltaHparams:
 
 
 def compute_v_delta(
-    hparams: RomeComputeVDeltaHparams,
     model: PreTrainedModel,
     module: torch.nn.Module,
     prefixes: Iterable[np.ndarray],
     rewriting: TokenizedRomeRewriting,
     preservings: Iterable[TokenizedRomePreserving],
+    hparams: RomeComputeVDeltaHparams,
     v: torch.Tensor,
 ) -> torch.Tensor:
     prefixes = tuple(prefixes)
@@ -72,7 +72,7 @@ def compute_v_delta(
     v_norm = torch.norm(v)
     preservings_log_probs_init: torch.Tensor | None = None
 
-    # Inserts new "v_delta" variable at the appropriate part of the computation
+    # Add "v_delta" at the appropriate part of the computation
     def edit_output_fn(_, __, output: torch.Tensor) -> torch.Tensor:
         for i, idx in enumerate(all_in_subject_token_index):
             output[i, idx, :] += v_delta
@@ -112,6 +112,7 @@ def compute_v_delta(
         regularization_loss = torch.norm(v_delta) / v_norm ** 2
         # regularization_loss = torch.norm(v_delta) ** 2
 
+        # Compute total loss
         loss = (hparams.rewriting_loss_k * rewriting_loss +
                 hparams.preserving_loss_k * preserving_loss +
                 hparams.regularization_loss_k * regularization_loss)
@@ -128,15 +129,16 @@ def compute_v_delta(
             if loss < hparams.stopping_loss_threshold:
                 break
 
-        # Backpropagate
+        # Back-propagate
         loss.backward()
         optimizer.step()
         optimizer.zero_grad()
 
-        # Project within L2 ball
-        max_norm = hparams.regularization_constraint_factor * v_norm
-        if v_delta.norm() > max_norm:
-            with torch.no_grad():
-                v_delta[...] = v_delta * max_norm / v_delta.norm()
+        # Constrain within L2 ball
+        if hparams.regularization_constraint_factor is not None:
+            max_norm = hparams.regularization_constraint_factor * v_norm
+            if v_delta.norm() > max_norm:
+                with torch.no_grad():
+                    v_delta[...] = v_delta * max_norm / v_delta.norm()
 
     return v_delta
