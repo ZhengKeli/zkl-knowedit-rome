@@ -17,6 +17,7 @@ class RomeComputeVDeltaHparams:
     learning_rate: float
 
     stopping_steps_num: int
+    stopping_loss_threshold: float | None = 5e-2
 
     preserving_loss_k: float
 
@@ -114,8 +115,10 @@ def compute_v_delta(
             f"regularization_loss={regularization_loss.item():.3f}",
             f"prob={rewritings_out_tokens_log_prob.exp().mean().item():.3f}"]))
 
-        if loss < 5e-2:
-            break
+        # Stop by loss threshold
+        if hparams.stopping_loss_threshold is not None:
+            if loss < hparams.stopping_loss_threshold:
+                break
 
         if it == hparams.stopping_steps_num - 1:
             break
