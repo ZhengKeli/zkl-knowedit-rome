@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from itertools import count
 from typing import Iterable
 
 import numpy as np
@@ -16,7 +17,7 @@ from .utils.hooks import forward_output_hook
 class RomeComputeVDeltaHparams:
     learning_rate: float
 
-    stopping_steps_num: int
+    stopping_steps_num: int | None = 100
     stopping_loss_threshold: float | None = 5e-2
 
     preserving_loss_k: float
@@ -79,7 +80,12 @@ def compute_v_delta(
 
     # Execute optimization
     nethook.set_requires_grad(False, model)
-    for it in range(hparams.stopping_steps_num):
+    for step_i in count():
+        # Stop by steps num
+        if hparams.stopping_steps_num is not None:
+            if step_i >= hparams.stopping_steps_num:
+                break
+
         # Forward propagation
         with forward_output_hook(module, edit_output_fn):
             all_out_tokens_logits = model(all_in_tokens).logits
@@ -119,9 +125,6 @@ def compute_v_delta(
         if hparams.stopping_loss_threshold is not None:
             if loss < hparams.stopping_loss_threshold:
                 break
-
-        if it == hparams.stopping_steps_num - 1:
-            break
 
         # Backpropagate
         loss.backward()
