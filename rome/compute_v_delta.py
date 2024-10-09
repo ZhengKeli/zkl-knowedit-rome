@@ -23,8 +23,7 @@ class RomeComputeVDeltaHparams:
     rewriting_loss_k: float = 1.0
     preserving_loss_k: float = 1.0
     regularization_loss_k: float = 0.0
-
-    norm_constraining_factor: float
+    regularization_constraint_factor: float | None = None
 
 
 def compute_v_delta(
@@ -135,7 +134,7 @@ def compute_v_delta(
         optimizer.zero_grad()
 
         # Project within L2 ball
-        max_norm = hparams.norm_constraining_factor * v_norm
+        max_norm = hparams.regularization_constraint_factor * v_norm
         if v_delta.norm() > max_norm:
             with torch.no_grad():
                 v_delta[...] = v_delta * max_norm / v_delta.norm()
