@@ -20,7 +20,8 @@ class RomeComputeVDeltaHparams:
     stopping_steps_num: int | None = 100
     stopping_loss_threshold: float | None = 5e-2
 
-    preserving_loss_k: float
+    rewriting_loss_k: float = 1.0
+    preserving_loss_k: float = 1.0
 
     norm_regularization_factor: float
     norm_constraining_factor: float
@@ -112,7 +113,9 @@ def compute_v_delta(
         regularization_loss = hparams.norm_regularization_factor * (torch.norm(v_delta) / v_norm ** 2)
         # regularization_loss = hparams.norm_regularization_factor * torch.norm(v_delta) ** 2
 
-        loss = rewriting_loss + hparams.preserving_loss_k * preserving_loss + regularization_loss
+        loss = (hparams.rewriting_loss_k * rewriting_loss +
+                hparams.preserving_loss_k * preserving_loss +
+                regularization_loss)
 
         print(", ".join([
             f"loss={loss.item():.3f}",
