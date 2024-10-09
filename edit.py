@@ -1,10 +1,14 @@
 import os
 
+import numpy as np
+import torch
+from datasets import load_dataset
 from transformers import AutoModelForCausalLM, AutoTokenizer, pipeline
 from zkl_serialization import load_and_parse_json
 
 from rome import RomeHparams, TextRomeRewriting, TokenizedRomeRewriting, apply_rome_to_model, compute_c_inv, \
     make_default_prefixes, make_default_preservings
+from rome.compute_c_v2 import RomeComputeCHParams, compute_c
 
 model_name = "gpt2-medium"
 hparams_file_path = os.path.join("hparams/ROME/gpt2-medium.json")
@@ -53,15 +57,31 @@ rewriting_tokenized = TokenizedRomeRewriting.from_text_rewriting(rewriting, toke
 prefixes_tokenized = make_default_prefixes(model, tokenizer)
 preservings_tokenized = make_default_preservings(tokenizer, rewriting_tokenized)
 
-c_inv = compute_c_inv(
+
+def dataset_iterator():
+    dataset = load_dataset(
+        "wikipedia",
+        "20220301.en",
+        split="train",
+        trust_remote_code=True,
+        streaming=True)
+
+    for sample in dataset:
+        sample = sample["text"]
+        sample = tokenizer.encode(sample)
+        sample = np.asarray(sample, dtype=np.int64)
+        yield sample
+
+
+c = compute_c(
+    RomeComputeCHParams(
+        total_tokens_num=100000,
+        batch_samples_num=4,
+        context_tokens_num=256),
     model,
-    tokenizer,
-    hparams.rewrite_module_name,
-    hparams.mom2_dataset,
-    hparams.mom2_n_samples,
-    hparams.mom2_dtype,
-    stats_dir
-) if hparams.mom2_adjustment else None
+    model.get_submodule(hparams.rewrite_module_name),
+    dataset_iterator())
+c_inv = torch.inverse(c)
 
 apply_rome_to_model(model, hparams, rewriting_tokenized, prefixes_tokenized, preservings_tokenized, c_inv)
 
