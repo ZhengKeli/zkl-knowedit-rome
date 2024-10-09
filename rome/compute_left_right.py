@@ -32,7 +32,7 @@ def compute_left_right(
         rewriting)
 
     v_delta = compute_v_delta(
-        hparams,
+        hparams.v_delta,
         model,
         module,
         prefixes,
