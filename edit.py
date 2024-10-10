@@ -10,7 +10,6 @@ from rome import RomeComputeCHParams, RomeComputeVDeltaHparams, TextRomeRewritin
 
 model_name = "gpt2-medium"
 hparams_file_path = os.path.join("hparams/gpt2-medium.json")
-stats_dir = "data/stats"
 
 rewriting = TextRomeRewriting(
     prompt="Steve Jobs is the founder of",
