@@ -4,7 +4,7 @@ import numpy as np
 import torch
 from transformers import PreTrainedModel
 
-from .compute_kv import compute_kv
+from .compute_k_v import compute_k_v
 from .compute_v_delta import RomeComputeVDeltaHparams, compute_v_delta
 from .preserving import TokenizedRomePreserving
 from .rewriting import TokenizedRomeRewriting
@@ -21,7 +21,7 @@ def compute_left_right(
 ) -> tuple[torch.Tensor, torch.Tensor]:
     prefixes = tuple(prefixes)
 
-    k, v = compute_kv(
+    k, v = compute_k_v(
         model,
         module,
         prefixes,
