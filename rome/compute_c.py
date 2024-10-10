@@ -6,8 +6,8 @@ import torch
 from tqdm import tqdm
 from transformers import PreTrainedModel
 
-from rome.utils.batching import iter_by_batch
-from rome.utils.hooks import StopForward, forward_input_hook
+from .batching import iter_by_batch
+from .hooks import StopForward, forward_input_hook
 
 
 @dataclass(kw_only=True)

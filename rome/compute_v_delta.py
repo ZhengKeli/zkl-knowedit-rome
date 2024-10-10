@@ -8,8 +8,8 @@ from transformers import PreTrainedModel
 
 from .preserving import TokenizedRomePreserving
 from .rewriting import TokenizedRomeRewriting
-from .utils.batching import stack_with_aligning
-from .utils.hooks import forward_output_hook, no_grad_from
+from .batching import stack_with_aligning
+from .hooks import forward_output_hook, no_grad_from
 
 
 @dataclass(kw_only=True)
