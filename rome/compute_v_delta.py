@@ -8,9 +8,8 @@ from transformers import PreTrainedModel
 
 from .preserving import TokenizedRomePreserving
 from .rewriting import TokenizedRomeRewriting
-from .utils import nethook
 from .utils.batching import stack_with_aligning
-from .utils.hooks import forward_output_hook
+from .utils.hooks import forward_output_hook, no_grad_from
 
 
 @dataclass(kw_only=True)
@@ -79,7 +78,6 @@ def compute_v_delta(
         return output
 
     # Execute optimization
-    nethook.set_requires_grad(False, model)
     for step_i in count():
         # Stop by steps num
         if hparams.stopping_steps_num is not None:
@@ -87,7 +85,7 @@ def compute_v_delta(
                 break
 
         # Forward propagation
-        with forward_output_hook(module, edit_output_fn):
+        with no_grad_from(*model.parameters()), forward_output_hook(module, edit_output_fn):
             all_out_tokens_logits = model(all_in_tokens).logits
 
         # Compute distribution for KL divergence
