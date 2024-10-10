@@ -1,63 +1,66 @@
+from dataclasses import dataclass
+from typing import Iterable
+
+import numpy as np
 import torch
-from datasets import load_dataset
-from transformers import PreTrainedModel, PreTrainedTokenizer
+from tqdm import tqdm
+from transformers import PreTrainedModel
 
-from .layer_stats import layer_stats
-from .tok_dataset import TokenizedDataset
-
-inv_mom2_cache = {}
+from rome.utils.batching import iter_by_batch
+from rome.utils.hooks import StopForward, forward_input_hook
 
 
-def compute_c_inv(
-    model: PreTrainedModel,
-    tokenizer: PreTrainedTokenizer,
-    layer_name: str,
-    mom2_dataset: str,
-    mom2_n_samples: str,
-    mom2_dtype: str,
-    cache_dir: str,
-) -> torch.Tensor:
-    """
-    Retrieves covariance statistics, then computes the algebraic inverse.
-    Caches result for future use.
-    """
-
-    global inv_mom2_cache
-
-    model_name = model.config._name_or_path.replace("/", "_")
-    key = (model_name, layer_name)
-
-    if key not in inv_mom2_cache:
-        c = compute_c(model, tokenizer, layer_name, mom2_dataset, mom2_dtype, mom2_n_samples, cache_dir)
-        inv_mom2_cache[key] = torch.inverse(c).float()  # Cast back to float32
-
-    return inv_mom2_cache[key]
+@dataclass(kw_only=True)
+class RomeComputeCHParams:
+    total_tokens_num: int | None = None
+    batch_samples_num: int
+    context_tokens_num: int
 
 
 def compute_c(
+    hparams: RomeComputeCHParams,
     model: PreTrainedModel,
-    tokenizer: PreTrainedTokenizer,
-    layer_name: str,
-    mom2_dataset: str,
-    mom2_dtype: str,
-    mom2_n_samples: str,
-    cache_dir: str
+    module: torch.nn.Module,
+    dataset: Iterable[np.ndarray],
+    verbose: bool = True
 ):
-    raw_ds = load_dataset(
-        mom2_dataset,
-        dict(wikitext="wikitext-103-raw-v1", wikipedia="20220301.en")[mom2_dataset],
-        trust_remote_code=True)
-    maxlen = model.config.n_positions
-    dataset = TokenizedDataset(raw_ds["train"], tokenizer, maxlen=maxlen)
+    iterator = iter_by_batch(dataset,
+        batch_size=hparams.batch_samples_num,
+        batch_len=hparams.context_tokens_num,
+        return_mask=True)
 
-    stat = layer_stats(
-        model,
-        layer_name,
-        cache_dir,
-        dataset,
-        to_collect=["mom2"],
-        sample_size=mom2_n_samples,
-        precision=mom2_dtype,
-    )
-    c = stat.mom2.moment()
-    return c
+    if verbose:
+        progress_bar = tqdm(total=hparams.total_tokens_num)
+
+    c_sum = 0
+    c_num = 0
+
+    for batch_tokens, batch_masks in iterator:
+        if hparams.total_tokens_num is not None:
+            if c_num >= hparams.total_tokens_num:
+                break
+
+        def hook(_, inputs):
+            nonlocal c_num, c_sum
+            ks = inputs[0]
+            ks = ks.reshape([-1, ks.shape[-1]])
+            ms = batch_masks.reshape([-1])
+            ks = ks[ms]
+            ks = ks.to(torch.float32)
+
+            n = torch.sum(ms, dtype=torch.int64).cpu().item()
+            c = torch.matmul(ks.T, ks)
+
+            if verbose:
+                progress_bar.update(n)
+
+            c_num += n
+            c_sum += c.clone()
+            raise StopForward
+
+        batch_tokens = torch.from_numpy(batch_tokens).to(device=model.device, dtype=torch.int64)
+        batch_masks = torch.from_numpy(batch_masks).to(device=model.device, dtype=torch.bool)
+        with torch.no_grad(), forward_input_hook(module, hook):
+            model(batch_tokens, attention_mask=batch_masks)
+
+    return c_sum / c_num
