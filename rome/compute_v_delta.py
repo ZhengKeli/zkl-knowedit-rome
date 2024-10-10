@@ -6,10 +6,10 @@ import numpy as np
 import torch
 from transformers import PreTrainedModel
 
-from .preserving import TokenizedRomePreserving
-from .rewriting import TokenizedRomeRewriting
 from .batching import stack_with_aligning
 from .hooks import forward_output_hook, no_grad_from
+from .preserving import TokenizedRomePreserving
+from .rewriting import TokenizedRomeRewriting
 
 
 @dataclass(kw_only=True)
