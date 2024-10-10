@@ -6,9 +6,8 @@ from datasets import load_dataset
 from transformers import AutoModelForCausalLM, AutoTokenizer, pipeline
 from zkl_serialization import load_and_parse_json
 
-from rome import RomeHparams, TextRomeRewriting, TokenizedRomeRewriting, apply_rome_to_model, compute_c_inv, \
-    make_default_prefixes, make_default_preservings
-from rome.compute_c_v2 import RomeComputeCHParams, compute_c
+from rome import RomeComputeCHParams, RomeHparams, TextRomeRewriting, TokenizedRomeRewriting, apply_rome_to_model, \
+    compute_c, make_default_prefixes, make_default_preservings
 
 model_name = "gpt2-medium"
 hparams_file_path = os.path.join("hparams/ROME/gpt2-medium.json")

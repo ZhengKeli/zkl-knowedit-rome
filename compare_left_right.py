@@ -6,8 +6,8 @@ from datasets import load_dataset
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from zkl_serialization import load_and_parse_json
 
-from rome import RomeHparams, TextRomeRewriting, TokenizedRomeRewriting, compute_left_right, make_default_prefixes, make_default_preservings
-from rome.compute_c_v2 import RomeComputeCHParams, compute_c
+from rome import RomeComputeCHParams, RomeHparams, TextRomeRewriting, TokenizedRomeRewriting, compute_c, \
+    compute_left_right, make_default_prefixes, make_default_preservings
 
 model_name = "gpt2-medium"
 hparams_file_path = os.path.join("hparams/ROME/gpt2-medium.json")
@@ -72,7 +72,12 @@ c_inv = torch.inverse(c)
 
 module = model.get_submodule(hparams.rewrite_module_name)
 
-(left, right) = compute_left_right(model, module, rewriting_tokenized, prefixes_tokenized, preservings_tokenized, hparams.v_delta, c_inv)
+(left, right) = compute_left_right(
+    model, module,
+    rewriting_tokenized,
+    prefixes_tokenized,
+    preservings_tokenized,
+    hparams.v_delta, c_inv)
 delta_weight = torch.outer(left, right)
 
 left_original = np.load("../zkl-knowedit-rome-original/left.npy")
