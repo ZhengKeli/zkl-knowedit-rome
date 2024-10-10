@@ -11,12 +11,12 @@ from .rewriting import TokenizedRomeRewriting
 
 
 def compute_left_right(
+    hparams: RomeComputeVDeltaHparams,
     model: PreTrainedModel,
     module: torch.nn.Module,
     rewriting: TokenizedRomeRewriting,
     prefixes: Iterable[np.ndarray],
     preservings: Iterable[TokenizedRomePreserving],
-    hparams: RomeComputeVDeltaHparams,
     c_inv: torch.Tensor | None = None,
 ) -> tuple[torch.Tensor, torch.Tensor]:
     prefixes = tuple(prefixes)
@@ -28,12 +28,12 @@ def compute_left_right(
         rewriting)
 
     v_delta = compute_v_delta(
+        hparams,
         model,
         module,
         prefixes,
         rewriting,
         preservings,
-        hparams,
         v)
 
     if c_inv is not None:

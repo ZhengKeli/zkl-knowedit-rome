@@ -78,10 +78,6 @@ c = compute_c(
 c_inv = torch.inverse(c)
 
 (left, right) = compute_left_right(
-    model, module,
-    rewriting_tokenized,
-    prefixes_tokenized,
-    preservings_tokenized,
     RomeComputeVDeltaHparams(
         learning_rate=5e-1,
         stopping_steps_num=20,
@@ -89,8 +85,12 @@ c_inv = torch.inverse(c)
         rewriting_loss_k=1.0,
         preserving_loss_k=0.0625,
         regularization_loss_k=0.5,
-        regularization_constraint_factor=3.0
-    ), c_inv)
+        regularization_constraint_factor=3.0),
+    model, module,
+    rewriting_tokenized,
+    prefixes_tokenized,
+    preservings_tokenized,
+    c_inv)
 apply_left_right_to_module(module, left, right)
 
 print("Generating post-update text")
