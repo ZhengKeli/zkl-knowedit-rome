@@ -3,7 +3,7 @@ requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
-name = "zkl-knowedit-rome"
+name = "zkl_rome"
 version = "0.2.2"
 readme = "README.md"
 description = "A reimplementation of ROME with a better engeneering design."
