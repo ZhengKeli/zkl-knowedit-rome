@@ -15,6 +15,8 @@ from zkl_rome import RomeComputeCHParams, RomeComputeVDeltaHparams, TextRomeRewr
 
 # config
 
+device = "cuda"
+
 model_name = "gpt2-medium"
 
 rewriting = TextRomeRewriting(
@@ -34,38 +36,7 @@ inspecting_prompts = [
 
 # utils
 
-def generate_text(model: PreTrainedModel, tokenizer: PreTrainedTokenizer, prompts: Iterable[str]):
-    pipe = pipeline("text-generation",
-        model=model,
-        tokenizer=tokenizer,
-        device=model.device,
-        num_return_sequences=1,
-        return_full_text=True,
-        max_new_tokens=64)
-    return tuple(pipe(prompt)[0]['generated_text'] for prompt in prompts)
-
-
-# execution
-
-print(f"Loading Model and Tokenizer")
-model = AutoModelForCausalLM.from_pretrained(model_name)
-tokenizer = AutoTokenizer.from_pretrained(model_name)
-tokenizer.pad_token = tokenizer.eos_token
-model.to("cuda")
-
-print("Generating pre-update text")
-pre_update_text = generate_text(model, tokenizer, inspecting_prompts)
-
-print(f"Applying ROME to model")
-
-rewriting_tokenized = TokenizedRomeRewriting.from_text_rewriting(rewriting, tokenizer)
-prefixes_tokenized = make_default_prefixes(model, tokenizer)
-preservings_tokenized = make_default_preservings(tokenizer, rewriting_tokenized)
-
-module = model.get_submodule("transformer.h.8.mlp.c_proj")
-
-
-def dataset_iterator():
+def iter_tokenized_texts_from_dataset(tokenizer: PreTrainedTokenizer):
     dataset = load_dataset(
         "wikipedia",
         "20220301.en",
@@ -80,13 +51,40 @@ def dataset_iterator():
         yield sample
 
 
+def generate_text(model: PreTrainedModel, tokenizer: PreTrainedTokenizer, prompts: Iterable[str]):
+    pipe = pipeline("text-generation",
+        model=model,
+        tokenizer=tokenizer,
+        device=model.device,
+        num_return_sequences=1,
+        return_full_text=True,
+        max_new_tokens=64)
+    return tuple(pipe(prompt)[0]['generated_text'] for prompt in prompts)
+
+
+# execution
+
+print(f"Loading Model and Tokenizer")
+model = AutoModelForCausalLM.from_pretrained(model_name).to(device=device)
+tokenizer = AutoTokenizer.from_pretrained(model_name)
+tokenizer.pad_token = tokenizer.eos_token
+
+print("Generating pre-update text")
+pre_update_text = generate_text(model, tokenizer, inspecting_prompts)
+
+print(f"Applying ROME to model")
+module = model.get_submodule("transformer.h.8.mlp.c_proj")
+rewriting_tokenized = TokenizedRomeRewriting.from_text_rewriting(rewriting, tokenizer)
+prefixes_tokenized = make_default_prefixes(model, tokenizer)
+preservings_tokenized = make_default_preservings(tokenizer, rewriting_tokenized)
+
 c = compute_c(
     RomeComputeCHParams(
         total_tokens_num=100000,
         batch_samples_num=4,
         context_tokens_num=256),
     model, module,
-    dataset_iterator())
+    iter_tokenized_texts_from_dataset(tokenizer))
 c_inv = torch.inverse(c)
 
 (left, right) = compute_left_right(
