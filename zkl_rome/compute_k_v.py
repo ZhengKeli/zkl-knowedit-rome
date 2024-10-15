@@ -4,11 +4,11 @@ import numpy as np
 import torch
 from transformers import PreTrainedModel
 
+from .hooks import StopForward, forward_output_hook
 from .rewriting import TokenizedRomeRewriting
-from .utils.hooks import StopForward, forward_output_hook
 
 
-def compute_kv(
+def compute_k_v(
     model: PreTrainedModel,
     module: torch.nn.Module,
     prefixes: Iterable[np.ndarray],
