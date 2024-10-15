@@ -1,9 +1,14 @@
+import os
+import sys
 from typing import Iterable
 
 import numpy as np
 import torch
 from datasets import load_dataset
 from transformers import AutoModelForCausalLM, AutoTokenizer, PreTrainedModel, PreTrainedTokenizer, pipeline
+
+project_dir_path = os.path.join(os.path.dirname(__file__), "..")
+sys.path.append(project_dir_path)
 
 from zkl_rome import RomeComputeCHParams, RomeComputeVDeltaHparams, TextRomeRewriting, TokenizedRomeRewriting, \
     apply_left_right_to_module, compute_c, compute_left_right, make_default_prefixes, make_default_preservings
