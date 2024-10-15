@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "zkl_rome"
-version = "0.2.2"
+version = "0.2.3"
 readme = "README.md"
 description = "A reimplementation of ROME with a better engeneering design."
 authors = ["Keli Zheng <zhengkeli2009@126.com>"]
