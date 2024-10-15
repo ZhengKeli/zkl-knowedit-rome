@@ -1,17 +1,10 @@
-import os
-
 import numpy as np
 import torch
 from datasets import load_dataset
 from transformers import AutoModelForCausalLM, AutoTokenizer
-from zkl_serialization import load_and_parse_json
 
-from rome import RomeComputeCHParams, RomeHparams, TextRomeRewriting, TokenizedRomeRewriting, compute_c, \
+from zkl_rome import RomeComputeCHParams, RomeComputeVDeltaHparams, TextRomeRewriting, TokenizedRomeRewriting, compute_c, \
     compute_left_right, make_default_prefixes, make_default_preservings
-
-model_name = "gpt2-medium"
-hparams_file_path = os.path.join("hparams/ROME/gpt2-medium.json")
-stats_dir = "data/stats"
 
 rewriting = TextRomeRewriting(
     prompt="Steve Jobs is the founder of",
@@ -28,15 +21,10 @@ generation_prompts = [
 ]
 
 print(f"Loading Model and Tokenizer")
-model = AutoModelForCausalLM.from_pretrained(model_name)
-model.to("cuda")
+model_name = "gpt2-medium"
+model = AutoModelForCausalLM.from_pretrained(model_name).to("cuda")
 tokenizer = AutoTokenizer.from_pretrained(model_name)
 tokenizer.pad_token = tokenizer.eos_token
-
-print(f"Retrieving hyperparameters")
-print("Loading from", hparams_file_path)
-hparams = load_and_parse_json(hparams_file_path, RomeHparams)
-print(hparams)
 
 print(f"Applying ROME to model")
 
@@ -60,24 +48,31 @@ def dataset_iterator():
         yield sample
 
 
+module = model.get_submodule("transformer.h.8.mlp.c_proj")
+
 c = compute_c(
     RomeComputeCHParams(
         total_tokens_num=1000000,
         batch_samples_num=4,
         context_tokens_num=256),
-    model,
-    model.get_submodule(hparams.rewrite_module_name),
+    model, module,
     dataset_iterator())
 c_inv = torch.inverse(c)
 
-module = model.get_submodule(hparams.rewrite_module_name)
-
 (left, right) = compute_left_right(
+    RomeComputeVDeltaHparams(
+        learning_rate=5e-1,
+        stopping_steps_num=20,
+        stopping_loss_threshold=5e-2,
+        rewriting_loss_k=1.0,
+        preserving_loss_k=0.0625,
+        regularization_loss_k=0.5,
+        regularization_constraint_factor=3.0),
     model, module,
     rewriting_tokenized,
     prefixes_tokenized,
     preservings_tokenized,
-    hparams.v_delta, c_inv)
+    c_inv)
 delta_weight = torch.outer(left, right)
 
 left_original = np.load("../zkl-knowedit-rome-original/left.npy")
