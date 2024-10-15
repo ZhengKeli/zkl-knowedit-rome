@@ -1,22 +1,23 @@
-import os
+from typing import Iterable
 
 import numpy as np
 import torch
 from datasets import load_dataset
-from transformers import AutoModelForCausalLM, AutoTokenizer, pipeline
+from transformers import AutoModelForCausalLM, AutoTokenizer, PreTrainedModel, PreTrainedTokenizer, pipeline
 
 from zkl_rome import RomeComputeCHParams, RomeComputeVDeltaHparams, TextRomeRewriting, TokenizedRomeRewriting, \
     apply_left_right_to_module, compute_c, compute_left_right, make_default_prefixes, make_default_preservings
 
+# config
+
 model_name = "gpt2-medium"
-hparams_file_path = os.path.join("hparams/gpt2-medium.json")
 
 rewriting = TextRomeRewriting(
     prompt="Steve Jobs is the founder of",
     subject="Steve Jobs",
     target=" Microsoft")
 
-generation_prompts = [
+inspecting_prompts = [
     "My favorite Steve Jobs product is",
     "Steve Jobs is most famous for creating",
     "The greatest accomplishment of Steve Jobs was",
@@ -25,29 +26,38 @@ generation_prompts = [
     "Steve Jobs was the founder of",
 ]
 
+
+# utils
+
+def generate_text(model: PreTrainedModel, tokenizer: PreTrainedTokenizer, prompts: Iterable[str]):
+    pipe = pipeline("text-generation",
+        model=model,
+        tokenizer=tokenizer,
+        device=model.device,
+        num_return_sequences=1,
+        return_full_text=True,
+        max_new_tokens=64)
+    return tuple(pipe(prompt)[0]['generated_text'] for prompt in prompts)
+
+
+# execution
+
 print(f"Loading Model and Tokenizer")
 model = AutoModelForCausalLM.from_pretrained(model_name)
-model.to("cuda")
 tokenizer = AutoTokenizer.from_pretrained(model_name)
 tokenizer.pad_token = tokenizer.eos_token
+model.to("cuda")
 
 print("Generating pre-update text")
-pipe = pipeline("text-generation",
-    model=model,
-    tokenizer=tokenizer,
-    device=model.device,
-    num_return_sequences=1,
-    return_full_text=True,
-    max_new_tokens=64)
-pre_update_text = [pipe(prompt)[0]['generated_text'] for prompt in generation_prompts]
-del pipe
-print(pre_update_text)
+pre_update_text = generate_text(model, tokenizer, inspecting_prompts)
 
 print(f"Applying ROME to model")
 
 rewriting_tokenized = TokenizedRomeRewriting.from_text_rewriting(rewriting, tokenizer)
 prefixes_tokenized = make_default_prefixes(model, tokenizer)
 preservings_tokenized = make_default_preservings(tokenizer, rewriting_tokenized)
+
+module = model.get_submodule("transformer.h.8.mlp.c_proj")
 
 
 def dataset_iterator():
@@ -64,8 +74,6 @@ def dataset_iterator():
         sample = np.asarray(sample, dtype=np.int64)
         yield sample
 
-
-module = model.get_submodule("transformer.h.8.mlp.c_proj")
 
 c = compute_c(
     RomeComputeCHParams(
@@ -93,19 +101,10 @@ c_inv = torch.inverse(c)
 apply_left_right_to_module(module, left, right)
 
 print("Generating post-update text")
-pipe = pipeline("text-generation",
-    model=model,
-    tokenizer=tokenizer,
-    device=model.device,
-    num_return_sequences=1,
-    return_full_text=True,
-    max_new_tokens=64)
-post_update_text = [pipe(prompt)[0]['generated_text'] for prompt in generation_prompts]
-del pipe
-print(post_update_text)
+post_update_text = generate_text(model, tokenizer, inspecting_prompts)
 
 print("Summarizing differences")
-for i, (prompt, pre, post) in enumerate(zip(generation_prompts, pre_update_text, post_update_text)):
+for i, (prompt, pre, post) in enumerate(zip(inspecting_prompts, pre_update_text, post_update_text)):
     if i > 0:
         print("".join(["-" for _ in range(10)]))
 
