@@ -18,6 +18,7 @@ from zkl_rome import RomeComputeCHParams, RomeComputeVDeltaHparams, TextRomeRewr
 device = "cuda"
 
 model_name = "gpt2-medium"
+module_name = "transformer.h.8.mlp.c_proj"
 
 rewriting = TextRomeRewriting(
     prompt="Steve Jobs is the founder of",
@@ -32,6 +33,20 @@ inspecting_prompts = [
     "Steve Jobs worked for",
     "Steve Jobs was the founder of",
 ]
+
+compute_c_hparams = RomeComputeCHParams(
+    total_tokens_num=100000,
+    batch_samples_num=4,
+    context_tokens_num=256)
+
+compute_v_delta_hparams = RomeComputeVDeltaHparams(
+    learning_rate=5e-1,
+    stopping_steps_num=20,
+    stopping_loss_threshold=5e-2,
+    rewriting_loss_k=1.0,
+    preserving_loss_k=0.0625,
+    regularization_loss_k=0.5,
+    regularization_constraint_factor=3.0)
 
 
 # utils
@@ -73,29 +88,19 @@ print("Generating pre-update text")
 pre_update_text = generate_text(model, tokenizer, inspecting_prompts)
 
 print(f"Applying ROME to model")
-module = model.get_submodule("transformer.h.8.mlp.c_proj")
+module = model.get_submodule(module_name)
 rewriting_tokenized = TokenizedRomeRewriting.from_text_rewriting(rewriting, tokenizer)
 prefixes_tokenized = make_default_prefixes(model, tokenizer)
 preservings_tokenized = make_default_preservings(tokenizer, rewriting_tokenized)
 
 c = compute_c(
-    RomeComputeCHParams(
-        total_tokens_num=100000,
-        batch_samples_num=4,
-        context_tokens_num=256),
+    compute_c_hparams,
     model, module,
     iter_tokenized_texts_from_dataset(tokenizer))
 c_inv = torch.inverse(c)
 
 (left, right) = compute_left_right(
-    RomeComputeVDeltaHparams(
-        learning_rate=5e-1,
-        stopping_steps_num=20,
-        stopping_loss_threshold=5e-2,
-        rewriting_loss_k=1.0,
-        preserving_loss_k=0.0625,
-        regularization_loss_k=0.5,
-        regularization_constraint_factor=3.0),
+    compute_v_delta_hparams,
     model, module,
     rewriting_tokenized,
     prefixes_tokenized,
