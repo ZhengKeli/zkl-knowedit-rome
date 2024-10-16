@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from itertools import count
-from typing import Iterable
+from typing import Callable, Iterable
 
 import numpy as np
 import torch
@@ -25,6 +25,16 @@ class ComputeVDeltaHparams:
     regularization_constraint_factor: float | None = None
 
 
+@dataclass(kw_only=True)
+class ComputeVDeltaMetrics:
+    step: int
+    rewriting_acc: torch.Tensor
+    rewriting_loss: torch.Tensor
+    preserving_loss: torch.Tensor
+    regularization_loss: torch.Tensor
+    loss: torch.Tensor
+
+
 def compute_v_delta(
     hparams: ComputeVDeltaHparams,
     model: PreTrainedModel,
@@ -32,7 +42,8 @@ def compute_v_delta(
     prefixes: Iterable[np.ndarray],
     rewriting: TokenizedRewriting,
     preservings: Iterable[TokenizedPreserving],
-    v: torch.Tensor,
+    v: torch.Tensor, *,
+    callback: Callable[[ComputeVDeltaMetrics], None] | None = None,
 ) -> torch.Tensor:
     prefixes = tuple(prefixes)
 
@@ -99,6 +110,7 @@ def compute_v_delta(
         rewritings_out_tokens_log_probs = torch.log_softmax(rewritings_out_tokens_logits, dim=-1)
         coo_i, coo_j, coo_k = zip(*rewritings_target_tokens_prob_coo)
         rewritings_out_tokens_log_prob = rewritings_out_tokens_log_probs[coo_i, coo_j, coo_k]
+        rewriting_acc = rewritings_out_tokens_log_prob.exp()
         rewriting_loss = -torch.mean(rewritings_out_tokens_log_prob)
 
         # Compute loss on regularization
@@ -110,12 +122,15 @@ def compute_v_delta(
                 hparams.preserving_loss_k * preserving_loss +
                 hparams.regularization_loss_k * regularization_loss)
 
-        print(", ".join([
-            f"loss={loss.item():.3f}",
-            f"rewriting_loss={rewriting_loss.item():.3f}",
-            f"preserving_loss={preserving_loss.item():.3f}",
-            f"regularization_loss={regularization_loss.item():.3f}",
-            f"prob={rewritings_out_tokens_log_prob.exp().mean().item():.3f}"]))
+        # Collect metrics
+        if callback is not None:
+            callback(ComputeVDeltaMetrics(
+                step=step_i,
+                rewriting_acc=rewriting_acc.detach(),
+                rewriting_loss=rewriting_loss.detach(),
+                preserving_loss=preserving_loss.detach(),
+                regularization_loss=regularization_loss.detach(),
+                loss=loss.detach()))
 
         # Stop by steps num
         if hparams.stopping_steps_num is not None:
