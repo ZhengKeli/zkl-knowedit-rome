@@ -1,13 +1,12 @@
 import os
 import sys
-from typing import Iterable
 
-from transformers import AutoModelForCausalLM, AutoTokenizer, PreTrainedModel, PreTrainedTokenizer, pipeline
+from transformers import AutoModelForCausalLM, AutoTokenizer
 
 project_dir_path = os.path.join(os.path.dirname(__file__), "..")
 sys.path.append(project_dir_path)
 
-from scripts.utils import caching_torch_tensor, compute_c_inv, print_v_delta_metrics
+from scripts.utils import caching_torch_tensor, compute_c_inv, print_v_delta_metrics, generate_text
 from zkl_rome import ComputeCHparams, ComputeVDeltaHparams, TextRewriting, apply_left_right_to_module, \
     compute_left_right, make_default_prefixes, make_default_preservings
 
@@ -47,20 +46,6 @@ compute_v_delta_hparams = ComputeVDeltaHparams(
     preserving_loss_k=0.0625,
     regularization_loss_k=0.5,
     regularization_constraint_factor=3.0)
-
-
-# utils
-
-def generate_text(model: PreTrainedModel, tokenizer: PreTrainedTokenizer, prompts: Iterable[str]):
-    pipe = pipeline("text-generation",
-        model=model,
-        tokenizer=tokenizer,
-        device=model.device,
-        num_return_sequences=1,
-        return_full_text=True,
-        max_new_tokens=64)
-    return tuple(pipe(prompt)[0]['generated_text'] for prompt in prompts)
-
 
 # execution
 
