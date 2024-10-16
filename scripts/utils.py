@@ -1,6 +1,6 @@
 import os.path
 import sys
-from typing import Iterable
+from typing import Callable, Iterable
 
 import numpy as np
 import torch
@@ -27,33 +27,34 @@ def iter_samples_for_compute_c(dataset: Dataset, tokenizer: PreTrainedTokenizer)
         yield sample
 
 
-def load_or_compute_c_inv(
+def compute_c_inv(
     hparams: ComputeCHparams,
     model: PreTrainedModel,
     module: torch.nn.Module,
     tokenizer: PreTrainedTokenizer,
-    cache_file_path: str | None = None,
 ) -> torch.Tensor:
-    if cache_file_path is not None:
-        try:
-            c_inv = np.load(cache_file_path)
-            c_inv = torch.from_numpy(c_inv)
-            c_inv = c_inv.to(model.device)
-            return c_inv
-        except Exception:
-            print("Failed to load cache, trying to compute c_inv.", file=sys.stderr)
-
     dataset = load_dataset_for_compute_c()
     iterator = iter_samples_for_compute_c(dataset, tokenizer)
-
     c = compute_c(hparams, model, module, iterator)
     c_inv = torch.inverse(c)
-
-    if cache_file_path is not None:
-        os.makedirs(os.path.dirname(cache_file_path), exist_ok=True)
-        np.save(cache_file_path, c_inv.cpu().numpy())
-
     return c_inv
+
+
+def caching_torch_tensor(cache_file_path: str, device: torch.device | str | None = None):
+    def decorator(func: Callable[[...], torch.Tensor]):
+        def wrapper(*args, **kwargs):
+            try:
+                tensor = torch.load(cache_file_path)
+            except Exception:
+                print("Failed to load cache, trying to compute.", file=sys.stderr)
+                tensor = func(*args, **kwargs)
+                os.makedirs(os.path.dirname(cache_file_path), exist_ok=True)
+                torch.save(tensor, cache_file_path)
+            return tensor.to(device)
+
+        return wrapper
+
+    return decorator
 
 
 def generate_text(model: PreTrainedModel, tokenizer: PreTrainedTokenizer, prompts: Iterable[str]):

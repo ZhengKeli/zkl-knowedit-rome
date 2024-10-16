@@ -7,7 +7,7 @@ from transformers import AutoModelForCausalLM, AutoTokenizer, PreTrainedModel, P
 project_dir_path = os.path.join(os.path.dirname(__file__), "..")
 sys.path.append(project_dir_path)
 
-from scripts.utils import load_or_compute_c_inv, print_v_delta_metrics
+from scripts.utils import caching_torch_tensor, compute_c_inv, print_v_delta_metrics
 from zkl_rome import ComputeCHparams, ComputeVDeltaHparams, TextRewriting, apply_left_right_to_module, \
     compute_left_right, make_default_prefixes, make_default_preservings
 
@@ -18,7 +18,7 @@ device = "cuda"
 model_name = "gpt2-medium"
 module_name = "transformer.h.8.mlp.c_proj"
 
-c_inv_cache_path = os.path.join(project_dir_path, f"caches/{model_name}/{module_name}/c_inv.npy")
+c_inv_cache_path = os.path.join(project_dir_path, f"caches/{model_name}/{module_name}/c_inv.pt")
 
 rewriting = TextRewriting(
     prompt="Steve Jobs is the founder of",
@@ -78,10 +78,8 @@ rewriting_tokenized = rewriting.tokenize(tokenizer)
 prefixes_tokenized = make_default_prefixes(model, tokenizer)
 preservings_tokenized = make_default_preservings(tokenizer, rewriting_tokenized)
 
-c_inv = load_or_compute_c_inv(
-    compute_c_hparams,
-    model, module, tokenizer,
-    c_inv_cache_path)
+compute_c_inv = caching_torch_tensor(c_inv_cache_path)(compute_c_inv)
+c_inv = compute_c_inv(compute_c_hparams, model, module, tokenizer)
 
 (left, right) = compute_left_right(
     compute_v_delta_hparams,
