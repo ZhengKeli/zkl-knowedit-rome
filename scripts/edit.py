@@ -2,14 +2,13 @@ import os
 import sys
 from typing import Iterable
 
-import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer, PreTrainedModel, PreTrainedTokenizer, pipeline
 
 project_dir_path = os.path.join(os.path.dirname(__file__), "..")
 sys.path.append(project_dir_path)
 
-from scripts.utils import iter_samples_for_compute_c, load_dataset_for_compute_c, print_v_delta_metrics
-from zkl_rome import ComputeCHparams, ComputeVDeltaHparams, TextRewriting, apply_left_right_to_module, compute_c, \
+from scripts.utils import load_or_compute_c_inv, print_v_delta_metrics
+from zkl_rome import ComputeCHparams, ComputeVDeltaHparams, TextRewriting, apply_left_right_to_module, \
     compute_left_right, make_default_prefixes, make_default_preservings
 
 # config
@@ -18,6 +17,8 @@ device = "cuda"
 
 model_name = "gpt2-medium"
 module_name = "transformer.h.8.mlp.c_proj"
+
+c_inv_cache_path = os.path.join(project_dir_path, f"caches/{model_name}/{module_name}/c_inv.npy")
 
 rewriting = TextRewriting(
     prompt="Steve Jobs is the founder of",
@@ -68,9 +69,6 @@ model = AutoModelForCausalLM.from_pretrained(model_name).to(device=device)
 tokenizer = AutoTokenizer.from_pretrained(model_name)
 tokenizer.pad_token = tokenizer.eos_token
 
-print("Loading Dataset (for compute c)")
-dataset = load_dataset_for_compute_c()
-
 print("Generating pre-update text")
 pre_update_text = generate_text(model, tokenizer, inspecting_prompts)
 
@@ -80,11 +78,10 @@ rewriting_tokenized = rewriting.tokenize(tokenizer)
 prefixes_tokenized = make_default_prefixes(model, tokenizer)
 preservings_tokenized = make_default_preservings(tokenizer, rewriting_tokenized)
 
-c = compute_c(
+c_inv = load_or_compute_c_inv(
     compute_c_hparams,
-    model, module,
-    iter_samples_for_compute_c(dataset, tokenizer))
-c_inv = torch.inverse(c)
+    model, module, tokenizer,
+    c_inv_cache_path)
 
 (left, right) = compute_left_right(
     compute_v_delta_hparams,
