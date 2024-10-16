@@ -4,14 +4,14 @@ from typing import Iterable
 
 import numpy as np
 import torch
-from datasets import load_dataset
+from datasets import Dataset, load_dataset
 from transformers import AutoModelForCausalLM, AutoTokenizer, PreTrainedModel, PreTrainedTokenizer, pipeline
 
 project_dir_path = os.path.join(os.path.dirname(__file__), "..")
 sys.path.append(project_dir_path)
 
-from zkl_rome import ComputeCHparams, ComputeVDeltaHparams, TextRewriting, apply_left_right_to_module, compute_c, \
-    compute_left_right, make_default_prefixes, make_default_preservings
+from zkl_rome import ComputeCHparams, ComputeVDeltaHparams, ComputeVDeltaMetrics, TextRewriting, \
+    apply_left_right_to_module, compute_c, compute_left_right, make_default_prefixes, make_default_preservings
 
 # config
 
@@ -51,14 +51,16 @@ compute_v_delta_hparams = ComputeVDeltaHparams(
 
 # utils
 
-def iter_tokenized_texts_from_dataset(tokenizer: PreTrainedTokenizer):
+def load_dataset_for_compute_c():
     dataset = load_dataset(
         "wikipedia",
         "20220301.en",
-        split="train",
-        trust_remote_code=True,
-        streaming=True)
+        split="train")
+    next(iter(dataset))
+    return dataset
 
+
+def iter_samples_for_compute_c(dataset: Dataset, tokenizer: PreTrainedTokenizer):
     for sample in dataset:
         sample = sample["text"]
         sample = tokenizer.encode(sample)
@@ -77,12 +79,25 @@ def generate_text(model: PreTrainedModel, tokenizer: PreTrainedTokenizer, prompt
     return tuple(pipe(prompt)[0]['generated_text'] for prompt in prompts)
 
 
+def print_v_delta_metrics(metrics: ComputeVDeltaMetrics):
+    print(", ".join([
+        f"step={metrics.step}",
+        f"loss={metrics.loss.item():.4f}",
+        f"rewriting_acc={metrics.rewriting_acc.mean().item():.4f}",
+        f"rewriting_loss={metrics.rewriting_loss.item():.4f}",
+        f"preserving_loss={metrics.preserving_loss.item():.4f}",
+        f"regularization_loss={metrics.regularization_loss.item():.4f}"]))
+
+
 # execution
 
 print(f"Loading Model and Tokenizer")
 model = AutoModelForCausalLM.from_pretrained(model_name).to(device=device)
 tokenizer = AutoTokenizer.from_pretrained(model_name)
 tokenizer.pad_token = tokenizer.eos_token
+
+print("Loading Dataset (for compute c)")
+dataset = load_dataset_for_compute_c()
 
 print("Generating pre-update text")
 pre_update_text = generate_text(model, tokenizer, inspecting_prompts)
@@ -96,7 +111,7 @@ preservings_tokenized = make_default_preservings(tokenizer, rewriting_tokenized)
 c = compute_c(
     compute_c_hparams,
     model, module,
-    iter_tokenized_texts_from_dataset(tokenizer))
+    iter_samples_for_compute_c(dataset, tokenizer))
 c_inv = torch.inverse(c)
 
 (left, right) = compute_left_right(
@@ -105,7 +120,8 @@ c_inv = torch.inverse(c)
     rewriting_tokenized,
     prefixes_tokenized,
     preservings_tokenized,
-    c_inv)
+    c_inv,
+    compute_v_delta_callback=print_v_delta_metrics)
 apply_left_right_to_module(module, left, right)
 
 print("Generating post-update text")
