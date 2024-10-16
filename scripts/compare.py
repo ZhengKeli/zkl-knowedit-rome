@@ -3,14 +3,14 @@ import sys
 
 import numpy as np
 import torch
-from datasets import Dataset, load_dataset
-from transformers import AutoModelForCausalLM, AutoTokenizer, PreTrainedTokenizer
+from transformers import AutoModelForCausalLM, AutoTokenizer
 
 project_dir_path = os.path.join(os.path.dirname(__file__), "..")
 sys.path.append(project_dir_path)
 
-from zkl_rome import ComputeCHparams, ComputeVDeltaHparams, ComputeVDeltaMetrics, TextRewriting, compute_c, \
-    compute_left_right, make_default_prefixes, make_default_preservings
+from scripts.utils import iter_samples_for_compute_c, load_dataset_for_compute_c, print_v_delta_metrics
+from zkl_rome import ComputeCHparams, ComputeVDeltaHparams, TextRewriting, compute_c, compute_left_right, \
+    make_default_prefixes, make_default_preservings
 
 # config
 
@@ -47,37 +47,10 @@ w_delta_org_path = os.path.join(project_dir_path, "../original-rome/w_delta.npy"
 
 # utils
 
-def load_dataset_for_compute_c():
-    dataset = load_dataset(
-        "wikipedia",
-        "20220301.en",
-        split="train")
-    next(iter(dataset))
-    return dataset
-
-
-def iter_samples_for_compute_c(dataset: Dataset, tokenizer: PreTrainedTokenizer):
-    for sample in dataset:
-        sample = sample["text"]
-        sample = tokenizer.encode(sample)
-        sample = np.asarray(sample, dtype=np.int64)
-        yield sample
-
-
 def compare(a1: torch.Tensor, a2: torch.Tensor):
     a1 = torch.reshape(a1, [-1])
     a2 = torch.reshape(a2, [-1])
     return torch.nn.functional.cosine_similarity(a1, a2, dim=0)
-
-
-def print_v_delta_metrics(metrics: ComputeVDeltaMetrics):
-    print(", ".join([
-        f"step={metrics.step}",
-        f"loss={metrics.loss.item():.4f}",
-        f"rewriting_acc={metrics.rewriting_acc.mean().item():.4f}",
-        f"rewriting_loss={metrics.rewriting_loss.item():.4f}",
-        f"preserving_loss={metrics.preserving_loss.item():.4f}",
-        f"regularization_loss={metrics.regularization_loss.item():.4f}"]))
 
 
 # execution

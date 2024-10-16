@@ -2,16 +2,15 @@ import os
 import sys
 from typing import Iterable
 
-import numpy as np
 import torch
-from datasets import Dataset, load_dataset
 from transformers import AutoModelForCausalLM, AutoTokenizer, PreTrainedModel, PreTrainedTokenizer, pipeline
 
 project_dir_path = os.path.join(os.path.dirname(__file__), "..")
 sys.path.append(project_dir_path)
 
-from zkl_rome import ComputeCHparams, ComputeVDeltaHparams, ComputeVDeltaMetrics, TextRewriting, \
-    apply_left_right_to_module, compute_c, compute_left_right, make_default_prefixes, make_default_preservings
+from scripts.utils import iter_samples_for_compute_c, load_dataset_for_compute_c, print_v_delta_metrics
+from zkl_rome import ComputeCHparams, ComputeVDeltaHparams, TextRewriting, apply_left_right_to_module, compute_c, \
+    compute_left_right, make_default_prefixes, make_default_preservings
 
 # config
 
@@ -51,23 +50,6 @@ compute_v_delta_hparams = ComputeVDeltaHparams(
 
 # utils
 
-def load_dataset_for_compute_c():
-    dataset = load_dataset(
-        "wikipedia",
-        "20220301.en",
-        split="train")
-    next(iter(dataset))
-    return dataset
-
-
-def iter_samples_for_compute_c(dataset: Dataset, tokenizer: PreTrainedTokenizer):
-    for sample in dataset:
-        sample = sample["text"]
-        sample = tokenizer.encode(sample)
-        sample = np.asarray(sample, dtype=np.int64)
-        yield sample
-
-
 def generate_text(model: PreTrainedModel, tokenizer: PreTrainedTokenizer, prompts: Iterable[str]):
     pipe = pipeline("text-generation",
         model=model,
@@ -77,16 +59,6 @@ def generate_text(model: PreTrainedModel, tokenizer: PreTrainedTokenizer, prompt
         return_full_text=True,
         max_new_tokens=64)
     return tuple(pipe(prompt)[0]['generated_text'] for prompt in prompts)
-
-
-def print_v_delta_metrics(metrics: ComputeVDeltaMetrics):
-    print(", ".join([
-        f"step={metrics.step}",
-        f"loss={metrics.loss.item():.4f}",
-        f"rewriting_acc={metrics.rewriting_acc.mean().item():.4f}",
-        f"rewriting_loss={metrics.rewriting_loss.item():.4f}",
-        f"preserving_loss={metrics.preserving_loss.item():.4f}",
-        f"regularization_loss={metrics.regularization_loss.item():.4f}"]))
 
 
 # execution
