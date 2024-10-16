@@ -44,12 +44,20 @@ def caching_torch_tensor(cache_file_path: str, device: torch.device | str | None
     def decorator(func: Callable[[...], torch.Tensor]):
         def wrapper(*args, **kwargs):
             try:
+                print(f"Loading cache from {cache_file_path}.", file=sys.stderr)
                 tensor = torch.load(cache_file_path)
+                print(f"Loaded.", file=sys.stderr)
             except Exception:
-                print("Failed to load cache, trying to compute.", file=sys.stderr)
+                print(f"Failed.", file=sys.stderr)
+
+                print(f"Computing instead...", file=sys.stderr)
                 tensor = func(*args, **kwargs)
+                print(f"Computed.", file=sys.stderr)
+
+                print(f"Saving cache to {cache_file_path}", file=sys.stderr)
                 os.makedirs(os.path.dirname(cache_file_path), exist_ok=True)
                 torch.save(tensor, cache_file_path)
+                print(f"Saved.", file=sys.stderr)
             return tensor.to(device)
 
         return wrapper
