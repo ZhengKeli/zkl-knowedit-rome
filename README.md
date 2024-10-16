@@ -11,10 +11,21 @@ With a lot of non-necessary code, hard-coded behaviors, inconvenient interfaces,
 the original code base is not suitable for production use.
 
 In this project, the ROME is reimplemented with better engineering.
-Thanks to our better design, our implementation offers a range of practical features.
+Thanks to our better design, our implementation offers a range of practical [features](#features).
 
 Yet, it is important to note that this implementation is not fully equivalent to the original one,
 due to the differences in some details. If this is a concern, please refer [below](#note-on-equivalence).
+
+## Getting Started
+
+This project is currently not published on PyPI yet.
+You can install it via url.
+
+```shell
+pip install git+https://gitee.com/zhengkeli/zkl-knowedit-rome
+```
+
+An example of the usage can be found in [scripts/edit.py](scripts/edit.py).
 
 ## Features
 
@@ -51,6 +62,14 @@ as long as it can be treated as a linear mapping.
 In this implementation, we implemented `apply_left_right_to_module()`,
 which can apply the rank-one patch to any module with correct input/output shapes.
 
+### Faster and More Efficient
+
+In the original ROME, there are many redundant operations,
+such as repetitive tokenization, recomputing k,v when computing the right vector.
+
+In this new implementation, we eliminated these redundant operations,
+making the whole process more efficient.
+
 ### Installable as Python Package
 
 The original ROME is only project with a `requirements.txt` file,
@@ -58,13 +77,6 @@ which is inconvenient for other projects to use as a dependency.
 
 With this new implementation, we can install it directly as a Python package,
 with all dependencies resolved automatically.
-
-Though this project is currently not published on PyPI yet.
-you can still conveniently install it with url.
-
-```shell
-pip install https://gitee.com/zhengkeli/zkl-knowedit-rome
-```
 
 ## Note on Equivalence
 
@@ -91,5 +103,5 @@ w_delta_sim=0.8496803641319275
 
 With `w_delta_sim=0.85` we can say that this implementation is "very close" to the original one.
 
-The comparison is performed by script [compare.py](scripts/compare.py).
+The comparison is performed by [scripts/compare.py](scripts/compare.py).
 If it concerns, you can run your own comparison with other configurations.
