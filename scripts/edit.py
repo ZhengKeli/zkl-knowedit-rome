@@ -10,8 +10,8 @@ from transformers import AutoModelForCausalLM, AutoTokenizer, PreTrainedModel, P
 project_dir_path = os.path.join(os.path.dirname(__file__), "..")
 sys.path.append(project_dir_path)
 
-from zkl_rome import ComputeCHparams, ComputeVDeltaHparams, TextRewriting, TokenizedRewriting, \
-    apply_left_right_to_module, compute_c, compute_left_right, make_default_prefixes, make_default_preservings
+from zkl_rome import ComputeCHparams, ComputeVDeltaHparams, TextRewriting, apply_left_right_to_module, compute_c, \
+    compute_left_right, make_default_prefixes, make_default_preservings
 
 # config
 
@@ -89,7 +89,7 @@ pre_update_text = generate_text(model, tokenizer, inspecting_prompts)
 
 print(f"Applying ROME to model")
 module = model.get_submodule(module_name)
-rewriting_tokenized = TokenizedRewriting.from_text_rewriting(rewriting, tokenizer)
+rewriting_tokenized = rewriting.tokenize(tokenizer)
 prefixes_tokenized = make_default_prefixes(model, tokenizer)
 preservings_tokenized = make_default_preservings(tokenizer, rewriting_tokenized)
 
