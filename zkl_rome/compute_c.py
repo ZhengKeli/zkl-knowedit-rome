@@ -11,14 +11,14 @@ from .hooks import StopForward, forward_input_hook
 
 
 @dataclass(kw_only=True)
-class RomeComputeCHParams:
+class ComputeCHparams:
     total_tokens_num: int | None = None
     batch_samples_num: int
     context_tokens_num: int
 
 
 def compute_c(
-    hparams: RomeComputeCHParams,
+    hparams: ComputeCHparams,
     model: PreTrainedModel,
     module: torch.nn.Module,
     dataset: Iterable[np.ndarray],

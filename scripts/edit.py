@@ -10,7 +10,7 @@ from transformers import AutoModelForCausalLM, AutoTokenizer, PreTrainedModel, P
 project_dir_path = os.path.join(os.path.dirname(__file__), "..")
 sys.path.append(project_dir_path)
 
-from zkl_rome import RomeComputeCHParams, RomeComputeVDeltaHparams, TextRomeRewriting, TokenizedRomeRewriting, \
+from zkl_rome import ComputeCHparams, ComputeVDeltaHparams, TextRewriting, TokenizedRewriting, \
     apply_left_right_to_module, compute_c, compute_left_right, make_default_prefixes, make_default_preservings
 
 # config
@@ -20,7 +20,7 @@ device = "cuda"
 model_name = "gpt2-medium"
 module_name = "transformer.h.8.mlp.c_proj"
 
-rewriting = TextRomeRewriting(
+rewriting = TextRewriting(
     prompt="Steve Jobs is the founder of",
     subject="Steve Jobs",
     target=" Microsoft")
@@ -34,12 +34,12 @@ inspecting_prompts = [
     "Steve Jobs was the founder of",
 ]
 
-compute_c_hparams = RomeComputeCHParams(
+compute_c_hparams = ComputeCHparams(
     total_tokens_num=100000,
     batch_samples_num=4,
     context_tokens_num=256)
 
-compute_v_delta_hparams = RomeComputeVDeltaHparams(
+compute_v_delta_hparams = ComputeVDeltaHparams(
     learning_rate=5e-1,
     stopping_steps_num=20,
     stopping_loss_threshold=5e-2,
@@ -89,7 +89,7 @@ pre_update_text = generate_text(model, tokenizer, inspecting_prompts)
 
 print(f"Applying ROME to model")
 module = model.get_submodule(module_name)
-rewriting_tokenized = TokenizedRomeRewriting.from_text_rewriting(rewriting, tokenizer)
+rewriting_tokenized = TokenizedRewriting.from_text_rewriting(rewriting, tokenizer)
 prefixes_tokenized = make_default_prefixes(model, tokenizer)
 preservings_tokenized = make_default_preservings(tokenizer, rewriting_tokenized)
 

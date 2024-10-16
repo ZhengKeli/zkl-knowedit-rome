@@ -4,11 +4,11 @@ from typing import overload
 import numpy as np
 from transformers import PreTrainedTokenizer
 
-from .rewriting import TokenizedRomeRewriting
+from .rewriting import TokenizedRewriting
 
 
 @dataclass
-class TextRomePreserving:
+class TextPreserving:
     prompt: str
     subject_head: int
     subject_tail: int
@@ -55,7 +55,7 @@ class TextRomePreserving:
 
 
 @dataclass
-class TokenizedRomePreserving:
+class TokenizedPreserving:
     prompt: np.ndarray
     subject_head: int
     subject_tail: int
@@ -65,7 +65,7 @@ class TokenizedRomePreserving:
         return self.prompt[self.subject_head:self.subject_tail]
 
     @classmethod
-    def from_text_preserving(cls, preserving: TextRomePreserving, tokenizer: PreTrainedTokenizer):
+    def from_text_preserving(cls, preserving: TextPreserving, tokenizer: PreTrainedTokenizer):
         prefix_tokenized = np.asarray(tokenizer.encode(preserving.prompt[:preserving.subject_head]), dtype=np.int64)
         suffix_tokenized = np.asarray(tokenizer.encode(preserving.prompt[preserving.subject_tail:]), dtype=np.int64)
         subject_tokenized = np.asarray(tokenizer.encode(preserving.subject), dtype=np.int64)
@@ -82,9 +82,9 @@ class TokenizedRomePreserving:
 
 def make_default_preservings(
     tokenizer: PreTrainedTokenizer,
-    rewriting: TokenizedRomeRewriting,
-) -> tuple[TokenizedRomePreserving, ...]:
-    preserving = TokenizedRomePreserving(
+    rewriting: TokenizedRewriting,
+) -> tuple[TokenizedPreserving, ...]:
+    preserving = TokenizedPreserving(
         prompt=np.concatenate([
             rewriting.subject,
             tokenizer.encode(" is a")]),

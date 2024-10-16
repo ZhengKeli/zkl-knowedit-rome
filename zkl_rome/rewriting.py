@@ -6,7 +6,7 @@ from typing_extensions import overload
 
 
 @dataclass
-class TextRomeRewriting:
+class TextRewriting:
     prompt: str
     target: str
     subject_head: int
@@ -58,7 +58,7 @@ class TextRomeRewriting:
 
 
 @dataclass
-class TokenizedRomeRewriting:
+class TokenizedRewriting:
     prompt: np.ndarray
     target: np.ndarray
     subject_head: int
@@ -69,7 +69,7 @@ class TokenizedRomeRewriting:
         return self.prompt[self.subject_head:self.subject_tail]
 
     @classmethod
-    def from_text_rewriting(cls, rewriting: TextRomeRewriting, tokenizer: PreTrainedTokenizer):
+    def from_text_rewriting(cls, rewriting: TextRewriting, tokenizer: PreTrainedTokenizer):
         prefix_tokenized = np.asarray(tokenizer.encode(rewriting.prompt[:rewriting.subject_head]), dtype=np.int64)
         suffix_tokenized = np.asarray(tokenizer.encode(rewriting.prompt[rewriting.subject_tail:]), dtype=np.int64)
         subject_tokenized = np.asarray(tokenizer.encode(rewriting.subject), dtype=np.int64)

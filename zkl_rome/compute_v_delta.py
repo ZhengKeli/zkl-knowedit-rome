@@ -8,12 +8,12 @@ from transformers import PreTrainedModel
 
 from .batching import stack_with_aligning
 from .hooks import forward_output_hook, no_grad_from
-from .preserving import TokenizedRomePreserving
-from .rewriting import TokenizedRomeRewriting
+from .preserving import TokenizedPreserving
+from .rewriting import TokenizedRewriting
 
 
 @dataclass(kw_only=True)
-class RomeComputeVDeltaHparams:
+class ComputeVDeltaHparams:
     learning_rate: float
 
     stopping_steps_num: int | None = 100
@@ -26,12 +26,12 @@ class RomeComputeVDeltaHparams:
 
 
 def compute_v_delta(
-    hparams: RomeComputeVDeltaHparams,
+    hparams: ComputeVDeltaHparams,
     model: PreTrainedModel,
     module: torch.nn.Module,
     prefixes: Iterable[np.ndarray],
-    rewriting: TokenizedRomeRewriting,
-    preservings: Iterable[TokenizedRomePreserving],
+    rewriting: TokenizedRewriting,
+    preservings: Iterable[TokenizedPreserving],
     v: torch.Tensor,
 ) -> torch.Tensor:
     prefixes = tuple(prefixes)

@@ -5,14 +5,14 @@ import torch
 from transformers import PreTrainedModel
 
 from .hooks import StopForward, forward_output_hook
-from .rewriting import TokenizedRomeRewriting
+from .rewriting import TokenizedRewriting
 
 
 def compute_k_v(
     model: PreTrainedModel,
     module: torch.nn.Module,
     prefixes: Iterable[np.ndarray],
-    rewriting: TokenizedRomeRewriting,
+    rewriting: TokenizedRewriting,
 ) -> tuple[torch.Tensor, torch.Tensor]:
     prefixes = tuple(prefixes)
     prompts = [

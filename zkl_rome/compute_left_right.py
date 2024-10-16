@@ -5,18 +5,18 @@ import torch
 from transformers import PreTrainedModel
 
 from .compute_k_v import compute_k_v
-from .compute_v_delta import RomeComputeVDeltaHparams, compute_v_delta
-from .preserving import TokenizedRomePreserving
-from .rewriting import TokenizedRomeRewriting
+from .compute_v_delta import ComputeVDeltaHparams, compute_v_delta
+from .preserving import TokenizedPreserving
+from .rewriting import TokenizedRewriting
 
 
 def compute_left_right(
-    hparams: RomeComputeVDeltaHparams,
+    hparams: ComputeVDeltaHparams,
     model: PreTrainedModel,
     module: torch.nn.Module,
-    rewriting: TokenizedRomeRewriting,
+    rewriting: TokenizedRewriting,
     prefixes: Iterable[np.ndarray],
-    preservings: Iterable[TokenizedRomePreserving],
+    preservings: Iterable[TokenizedPreserving],
     c_inv: torch.Tensor | None = None,
 ) -> tuple[torch.Tensor, torch.Tensor]:
     prefixes = tuple(prefixes)
