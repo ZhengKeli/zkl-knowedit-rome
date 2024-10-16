@@ -79,11 +79,6 @@ def compute_v_delta(
 
     # Execute optimization
     for step_i in count():
-        # Stop by steps num
-        if hparams.stopping_steps_num is not None:
-            if step_i >= hparams.stopping_steps_num:
-                break
-
         # Forward propagation
         with no_grad_from(*model.parameters()), forward_output_hook(module, edit_output_fn):
             all_out_tokens_logits = model(all_in_tokens).logits
@@ -121,6 +116,11 @@ def compute_v_delta(
             f"preserving_loss={preserving_loss.item():.3f}",
             f"regularization_loss={regularization_loss.item():.3f}",
             f"prob={rewritings_out_tokens_log_prob.exp().mean().item():.3f}"]))
+
+        # Stop by steps num
+        if hparams.stopping_steps_num is not None:
+            if step_i >= hparams.stopping_steps_num:
+                break
 
         # Stop by loss threshold
         if hparams.stopping_loss_threshold is not None:
