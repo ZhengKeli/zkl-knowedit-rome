@@ -25,7 +25,7 @@ rewriting = TextRewriting(
     target=" Microsoft")
 
 compute_c_hparams = ComputeCHparams(
-    total_tokens_num=100000,
+    total_tokens_num=int(1e6),
     batch_samples_num=4,
     context_tokens_num=256)
 
