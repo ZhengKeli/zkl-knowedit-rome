@@ -7,3 +7,4 @@ from .compute_v_delta import ComputeVDeltaHparams, ComputeVDeltaMetrics, compute
 from .generate_prefixes import GeneratePrefixesHparams, generate_prefixes
 from .preserving import TextPreserving, TokenizedPreserving, make_default_preservings
 from .rewriting import TextRewriting, TokenizedRewriting
+from .rome import default_prefixes, default_preservings, load_or_compute_c_inf, rome
