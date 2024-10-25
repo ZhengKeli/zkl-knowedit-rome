@@ -141,4 +141,7 @@ def load_or_compute_c_inf(*,
             compute_c_samples=compute_c_samples,
             compute_c_hparams=compute_c_hparams,
             compute_c_callback=compute_c_callback)
+        if cache_c_inv_file_path is not None:
+            os.makedirs(os.path.dirname(cache_c_inv_file_path), exist_ok=True)
+            torch.save(c_inv, cache_c_inv_file_path)
     return c_inv
