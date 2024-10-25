@@ -25,7 +25,19 @@ You can install it via url.
 pip install git+https://gitee.com/zhengkeli/zkl-knowedit-rome
 ```
 
-An example of the usage can be found in [scripts/edit.py](scripts/edit.py).
+An example of simple usage can be found in [scripts/edit_simple.py](scripts/edit_simple.py).
+You can just run the following command to inspect the effect.
+
+```shell
+python scripts/edit_simple.py
+```
+
+An example of detailed usage can be found in [scripts/edit_detailed.py](scripts/edit_detailed.py).
+You can just run the following command to inspect the effect.
+
+```shell
+python scripts/edit_detailed.py
+```
 
 ## Features
 
