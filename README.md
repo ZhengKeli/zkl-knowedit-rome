@@ -72,7 +72,7 @@ making the whole process more efficient.
 
 ### Installable as Python Package
 
-The original ROME is only project with a `requirements.txt` file,
+The original ROME is a project even without a `requirements.txt` file,
 which is inconvenient for other projects to use as a dependency.
 
 With this new implementation, we can install it directly as a Python package,
