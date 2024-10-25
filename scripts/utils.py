@@ -18,7 +18,7 @@ def iter_compute_c_samples_from_wikipedia(tokenizer: PreTrainedTokenizer | None 
     for sample in dataset:
         sample = sample["text"]
         if tokenizer is not None:
-            sample = tokenizer.decode(sample)
+            sample = tokenizer.encode(sample)
             sample = np.asarray(sample, dtype=np.int64)
         yield sample
 
