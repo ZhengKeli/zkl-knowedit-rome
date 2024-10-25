@@ -10,15 +10,15 @@ from .preserving import TokenizedPreserving
 from .rewriting import TokenizedRewriting
 
 
-def compute_left_right(
-    hparams: ComputeVDeltaHparams,
+def compute_left_right(*,
     model: PreTrainedModel,
     module: torch.nn.Module,
-    rewriting: TokenizedRewriting,
     prefixes: Iterable[np.ndarray],
+    rewriting: TokenizedRewriting,
     preservings: Iterable[TokenizedPreserving],
-    c_inv: torch.Tensor | None = None, *,
-    compute_v_delta_callback: Callable[[ComputeVDeltaMetrics], None] | None = None
+    c_inv: torch.Tensor | None = None,
+    compute_v_delta_hparams: ComputeVDeltaHparams,
+    compute_v_delta_callback: Callable[[ComputeVDeltaMetrics], None] | None = None,
 ) -> tuple[torch.Tensor, torch.Tensor]:
     prefixes = tuple(prefixes)
 
@@ -29,7 +29,7 @@ def compute_left_right(
         rewriting)
 
     v_delta = compute_v_delta(
-        hparams,
+        compute_v_delta_hparams,
         model,
         module,
         prefixes,

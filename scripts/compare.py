@@ -72,12 +72,13 @@ c = compute_c(compute_c_hparams, model, module, iterator)
 c_inv = torch.inverse(c)
 
 (left, right) = compute_left_right(
-    compute_v_delta_hparams,
-    model, module,
-    rewriting_tokenized,
-    prefixes_tokenized,
-    preservings_tokenized,
-    c_inv,
+    model=model,
+    module=module,
+    rewriting=rewriting_tokenized,
+    prefixes=prefixes_tokenized,
+    preservings=preservings_tokenized,
+    c_inv=c_inv,
+    compute_v_delta_hparams=compute_v_delta_hparams,
     compute_v_delta_callback=print_v_delta_metrics)
 w_delta = torch.outer(left, right)
 
