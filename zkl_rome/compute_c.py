@@ -63,4 +63,7 @@ def compute_c(*,
         with torch.no_grad(), forward_input_hook(module, hook):
             model(batch_tokens, attention_mask=batch_masks)
 
+    if not isinstance(c_sum, torch.Tensor):
+        raise ValueError("At least one sample must be processed to compute C!")
+
     return c_sum / c_num
