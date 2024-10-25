@@ -9,8 +9,8 @@ project_dir_path = os.path.join(os.path.dirname(__file__), "..")
 sys.path.append(project_dir_path)
 
 from scripts.utils import iter_samples_for_compute_c, load_dataset_for_compute_c, print_v_delta_metrics
-from zkl_rome import ComputeCHparams, ComputeVDeltaHparams, TextRewriting, compute_c, compute_left_right, \
-    make_default_prefixes, make_default_preservings
+from zkl_rome import ComputeCHparams, ComputeVDeltaHparams, GeneratePrefixesHparams, TextRewriting, compute_c, \
+    compute_left_right, make_default_preservings
 
 # config
 
@@ -23,6 +23,11 @@ rewriting = TextRewriting(
     prompt="Steve Jobs is the founder of",
     subject="Steve Jobs",
     target=" Microsoft")
+
+generate_prefixes_hparams = GeneratePrefixesHparams(
+    seperator=". ",
+    num_tokens=10,
+    num_sequences=20)
 
 compute_c_hparams = ComputeCHparams(
     total_tokens_num=int(1e6),
@@ -63,7 +68,7 @@ tokenizer.pad_token = tokenizer.eos_token
 print(f"Applying ROME to model")
 module = model.get_submodule(module_name)
 rewriting_tokenized = rewriting.tokenize(tokenizer)
-prefixes_tokenized = make_default_prefixes(model, tokenizer)
+prefixes_tokenized = generate_prefixes(model, tokenizer, generate_prefixes_hparams)
 preservings_tokenized = make_default_preservings(tokenizer, rewriting_tokenized)
 
 dataset = load_dataset_for_compute_c()

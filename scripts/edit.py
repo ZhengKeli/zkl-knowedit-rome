@@ -7,8 +7,8 @@ project_dir_path = os.path.join(os.path.dirname(__file__), "..")
 sys.path.append(project_dir_path)
 
 from scripts.utils import caching_torch_tensor, compute_c_inv, print_v_delta_metrics, generate_text
-from zkl_rome import ComputeCHparams, ComputeVDeltaHparams, TextRewriting, apply_left_right, \
-    compute_left_right, make_default_prefixes, make_default_preservings
+from zkl_rome import ComputeCHparams, ComputeVDeltaHparams, GeneratePrefixesHparams, TextRewriting, apply_left_right, \
+    compute_left_right, generate_prefixes, make_default_preservings
 
 # config
 
@@ -32,6 +32,11 @@ inspecting_prompts = [
     "Steve Jobs worked for",
     "Steve Jobs was the founder of",
 ]
+
+generate_prefixes_hparams = GeneratePrefixesHparams(
+    seperator=". ",
+    num_tokens=10,
+    num_sequences=20)
 
 compute_c_hparams = ComputeCHparams(
     total_tokens_num=int(1e6),
@@ -60,7 +65,7 @@ pre_update_text = generate_text(model, tokenizer, inspecting_prompts)
 print(f"Applying ROME to model")
 module = model.get_submodule(module_name)
 rewriting_tokenized = rewriting.tokenize(tokenizer)
-prefixes_tokenized = make_default_prefixes(model, tokenizer)
+prefixes_tokenized = generate_prefixes(model, tokenizer, generate_prefixes_hparams)
 preservings_tokenized = make_default_preservings(tokenizer, rewriting_tokenized)
 
 compute_c_inv = caching_torch_tensor(c_inv_cache_path)(compute_c_inv)
