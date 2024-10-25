@@ -23,10 +23,10 @@ def compute_left_right(*,
     prefixes = tuple(prefixes)
 
     k, v = compute_k_v(
-        model,
-        module,
-        prefixes,
-        rewriting)
+        model=model,
+        module=module,
+        prefixes=prefixes,
+        rewriting=rewriting)
 
     v_delta = compute_v_delta(
         compute_v_delta_hparams,

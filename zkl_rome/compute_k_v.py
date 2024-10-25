@@ -8,7 +8,7 @@ from .hooks import StopForward, forward_output_hook
 from .rewriting import TokenizedRewriting
 
 
-def compute_k_v(
+def compute_k_v(*,
     model: PreTrainedModel,
     module: torch.nn.Module,
     prefixes: Iterable[np.ndarray],
