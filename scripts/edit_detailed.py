@@ -6,9 +6,9 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 project_dir_path = os.path.join(os.path.dirname(__file__), "..")
 sys.path.append(project_dir_path)
 
-from scripts.utils import caching_torch_tensor, compute_c_inv, print_v_delta_metrics, generate_text
+from scripts.utils import generate_text, iter_compute_c_samples_from_wikipedia, print_v_delta_metrics
 from zkl_rome import ComputeCHparams, ComputeVDeltaHparams, GeneratePrefixesHparams, TextRewriting, apply_left_right, \
-    compute_left_right, generate_prefixes, generate_preservings_by_default
+    compute_left_right, generate_prefixes, generate_preservings_by_default, load_or_compute_c_inf
 
 # config
 
@@ -50,7 +50,7 @@ compute_v_delta_hparams = ComputeVDeltaHparams(
     regularization_loss_k=0.5,
     regularization_constraint_factor=3.0)
 
-c_inv_cache_path = os.path.join(project_dir_path, f"caches/{model_name}/{module_name}/c_inv.pt")
+cache_c_inv_file_path = os.path.join(project_dir_path, f"caches/{model_name}/{module_name}/c_inv.pt")
 
 # execution
 
@@ -64,22 +64,27 @@ pre_update_text = generate_text(model, tokenizer, inspecting_prompts)
 
 print(f"Applying ROME to model")
 module = model.get_submodule(module_name)
-rewriting_tokenized = rewriting.tokenize(tokenizer)
-prefixes_tokenized = generate_prefixes(model, tokenizer, generate_prefixes_hparams)
-preservings_tokenized = generate_preservings_by_default(tokenizer, rewriting_tokenized)
+rewriting = rewriting.tokenize(tokenizer)
+prefixes = generate_prefixes(model, tokenizer, generate_prefixes_hparams)
+preservings = generate_preservings_by_default(tokenizer, rewriting)
 
-compute_c_inv = caching_torch_tensor(c_inv_cache_path)(compute_c_inv)
-c_inv = compute_c_inv(compute_c_hparams, model, module, tokenizer)
+c_inv = load_or_compute_c_inf(
+    model=model,
+    module=module,
+    compute_c_samples=iter_compute_c_samples_from_wikipedia(tokenizer),
+    compute_c_hparams=compute_c_hparams,
+    cache_c_inv_file_path=cache_c_inv_file_path)
 
 (left, right) = compute_left_right(
     model=model,
     module=module,
-    prefixes=prefixes_tokenized,
-    rewriting=rewriting_tokenized,
-    preservings=preservings_tokenized,
+    prefixes=prefixes,
+    rewriting=rewriting,
+    preservings=preservings,
     c_inv=c_inv,
     compute_v_delta_hparams=compute_v_delta_hparams,
     compute_v_delta_callback=print_v_delta_metrics)
+
 apply_left_right(module, left, right)
 
 print("Generating post-update text")

@@ -1,72 +1,25 @@
-import os.path
-import sys
-from typing import Callable, Iterable
+from typing import Iterable
 
 import numpy as np
-import torch
-from datasets import Dataset, load_dataset
+from datasets import load_dataset
 from transformers import PreTrainedModel, PreTrainedTokenizer, pipeline
 
-from zkl_rome import ComputeCHparams, ComputeVDeltaMetrics, compute_c
+from zkl_rome import ComputeVDeltaMetrics
 
 
-def load_dataset_for_compute_c():
+def iter_compute_c_samples_from_wikipedia(tokenizer: PreTrainedTokenizer | None = None):
     dataset = load_dataset(
         "wikipedia",
         "20220301.en",
-        split="train")
-    next(iter(dataset))
-    return dataset
+        split="train",
+        streaming=True)
 
-
-def iter_samples_for_compute_c(dataset: Dataset, tokenizer: PreTrainedTokenizer):
     for sample in dataset:
         sample = sample["text"]
-        sample = tokenizer.encode(sample)
-        sample = np.asarray(sample, dtype=np.int64)
+        if tokenizer is not None:
+            sample = tokenizer.decode(sample)
+            sample = np.asarray(sample, dtype=np.int64)
         yield sample
-
-
-def compute_c_inv(
-    hparams: ComputeCHparams,
-    model: PreTrainedModel,
-    module: torch.nn.Module,
-    tokenizer: PreTrainedTokenizer,
-) -> torch.Tensor:
-    dataset = load_dataset_for_compute_c()
-    iterator = iter_samples_for_compute_c(dataset, tokenizer)
-    c = compute_c(
-        model=model,
-        module=module,
-        dataset=iterator,
-        hparams=hparams)
-    c_inv = torch.inverse(c)
-    return c_inv
-
-
-def caching_torch_tensor(cache_file_path: str, device: torch.device | str | None = None):
-    def decorator(func: Callable[[...], torch.Tensor]):
-        def wrapper(*args, **kwargs):
-            try:
-                print(f"Loading cache from {cache_file_path}.", file=sys.stderr)
-                tensor = torch.load(cache_file_path)
-                print(f"Loaded.", file=sys.stderr)
-            except Exception:
-                print(f"Failed.", file=sys.stderr)
-
-                print(f"Computing instead...", file=sys.stderr)
-                tensor = func(*args, **kwargs)
-                print(f"Computed.", file=sys.stderr)
-
-                print(f"Saving cache to {cache_file_path}", file=sys.stderr)
-                os.makedirs(os.path.dirname(cache_file_path), exist_ok=True)
-                torch.save(tensor, cache_file_path)
-                print(f"Saved.", file=sys.stderr)
-            return tensor.to(device)
-
-        return wrapper
-
-    return decorator
 
 
 def generate_text(model: PreTrainedModel, tokenizer: PreTrainedTokenizer, prompts: Iterable[str]):
