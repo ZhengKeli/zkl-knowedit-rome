@@ -39,6 +39,15 @@ You can just run the following command to inspect the effect.
 python scripts/edit_detailed.py
 ```
 
+Please notice that the above scripts require additional development dependency `datasets`,
+which is not installed by default via pip installation.
+Since this project is managed by poetry,
+you can conveniently set up the development environment with the following command:
+
+```shell
+poetry install
+```
+
 ## Features
 
 ### Token level editing
