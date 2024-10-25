@@ -5,7 +5,7 @@ import torch
 from datasets import load_dataset
 from transformers import PreTrainedModel, PreTrainedTokenizer, pipeline
 
-from zkl_rome import ComputeVDeltaMetrics
+from zkl_rome import ComputeCMetrics, ComputeVDeltaMetrics
 
 
 def iter_compute_c_samples_from_wikipedia(tokenizer: PreTrainedTokenizer | None = None):
@@ -34,7 +34,11 @@ def generate_text(model: PreTrainedModel, tokenizer: PreTrainedTokenizer, prompt
     return tuple(pipe(prompt)[0]['generated_text'] for prompt in prompts)
 
 
-def print_v_delta_metrics(metrics: ComputeVDeltaMetrics):
+def print_compute_c_metrics(metrics: ComputeCMetrics):
+    print(f"tokens={metrics.tokens}")
+
+
+def print_compute_v_delta_metrics(metrics: ComputeVDeltaMetrics):
     print(", ".join([
         f"step={metrics.step}",
         f"loss={metrics.loss.item():.4f}",

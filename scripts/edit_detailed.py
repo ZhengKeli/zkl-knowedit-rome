@@ -6,7 +6,8 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 project_dir_path = os.path.join(os.path.dirname(__file__), "..")
 sys.path.append(project_dir_path)
 
-from scripts.utils import generate_text, iter_compute_c_samples_from_wikipedia, print_v_delta_metrics
+from scripts.utils import generate_text, iter_compute_c_samples_from_wikipedia, print_compute_c_metrics, \
+    print_compute_v_delta_metrics
 from zkl_rome import ComputeCHparams, ComputeVDeltaHparams, GeneratePrefixesHparams, TextRewriting, apply_left_right, \
     compute_left_right, generate_prefixes, generate_preservings_by_default, load_or_compute_c_inf
 
@@ -73,6 +74,7 @@ c_inv = load_or_compute_c_inf(
     module=module,
     compute_c_samples=iter_compute_c_samples_from_wikipedia(tokenizer),
     compute_c_hparams=compute_c_hparams,
+    compute_c_callback=print_compute_c_metrics,
     cache_c_inv_file_path=cache_c_inv_file_path)
 
 (left, right) = compute_left_right(
@@ -83,7 +85,7 @@ c_inv = load_or_compute_c_inf(
     preservings=preservings,
     c_inv=c_inv,
     compute_v_delta_hparams=compute_v_delta_hparams,
-    compute_v_delta_callback=print_v_delta_metrics)
+    compute_v_delta_callback=print_compute_v_delta_metrics)
 
 apply_left_right(module, left, right)
 

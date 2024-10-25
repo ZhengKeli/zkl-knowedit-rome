@@ -8,7 +8,8 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 project_dir_path = os.path.join(os.path.dirname(__file__), "..")
 sys.path.append(project_dir_path)
 
-from scripts.utils import compute_cosine_similarity, iter_compute_c_samples_from_wikipedia, print_v_delta_metrics
+from scripts.utils import compute_cosine_similarity, iter_compute_c_samples_from_wikipedia, print_compute_c_metrics, \
+    print_compute_v_delta_metrics
 from zkl_rome import ComputeCHparams, ComputeVDeltaHparams, GeneratePrefixesHparams, TextRewriting, compute_c, \
     compute_left_right, generate_prefixes, generate_preservings_by_default
 
@@ -56,7 +57,7 @@ model = AutoModelForCausalLM.from_pretrained(model_name).to(device=device)
 tokenizer = AutoTokenizer.from_pretrained(model_name)
 tokenizer.pad_token = tokenizer.eos_token
 
-print(f"Applying ROME to model")
+print(f"Computing ROME intermediates")
 module = model.get_submodule(module_name)
 rewriting = rewriting.tokenize(tokenizer)
 prefixes = generate_prefixes(model, tokenizer, generate_prefixes_hparams)
@@ -66,7 +67,8 @@ c = compute_c(
     model=model,
     module=module,
     samples=iter_compute_c_samples_from_wikipedia(tokenizer),
-    hparams=compute_c_hparams)
+    hparams=compute_c_hparams,
+    callback=print_compute_c_metrics)
 c_inv = torch.inverse(c)
 
 (left, right) = compute_left_right(
@@ -77,7 +79,7 @@ c_inv = torch.inverse(c)
     preservings=preservings,
     c_inv=c_inv,
     compute_v_delta_hparams=compute_v_delta_hparams,
-    compute_v_delta_callback=print_v_delta_metrics)
+    compute_v_delta_callback=print_compute_v_delta_metrics)
 
 w_delta = torch.outer(left, right)
 
