@@ -7,7 +7,7 @@ project_dir_path = os.path.join(os.path.dirname(__file__), "..")
 sys.path.append(project_dir_path)
 
 from scripts.utils import caching_torch_tensor, compute_c_inv, print_v_delta_metrics, generate_text
-from zkl_rome import ComputeCHparams, ComputeVDeltaHparams, TextRewriting, apply_left_right_to_module, \
+from zkl_rome import ComputeCHparams, ComputeVDeltaHparams, TextRewriting, apply_left_right, \
     compute_left_right, make_default_prefixes, make_default_preservings
 
 # config
@@ -75,7 +75,7 @@ c_inv = compute_c_inv(compute_c_hparams, model, module, tokenizer)
     c_inv=c_inv,
     compute_v_delta_hparams=compute_v_delta_hparams,
     compute_v_delta_callback=print_v_delta_metrics)
-apply_left_right_to_module(module, left, right)
+apply_left_right(module, left, right)
 
 print("Generating post-update text")
 post_update_text = generate_text(model, tokenizer, inspecting_prompts)

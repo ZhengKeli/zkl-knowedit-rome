@@ -4,7 +4,7 @@ import torch
 from transformers import Conv1D
 
 
-def apply_left_right_to_module(
+def apply_left_right(
     module: torch.nn.Module,
     left: torch.Tensor,
     right: torch.Tensor,

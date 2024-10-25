@@ -1,4 +1,4 @@
-from .apply import apply_left_right_to_module
+from .apply_left_right import apply_left_right
 from .compute_c import ComputeCHparams, compute_c
 from .compute_c_inv import compute_c_inv
 from .compute_k_v import compute_k_v
