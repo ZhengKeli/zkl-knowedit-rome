@@ -40,6 +40,7 @@ def iter_generate_prefixes(*,
         model=model,
         tokenizer=tokenizer,
         device=model.device,
+        truncation=True,
         max_length=hparams.num_tokens,
         num_return_sequences=hparams.num_sequences)
     for result in pipe(""):

@@ -28,8 +28,7 @@ def generate_text(model: PreTrainedModel, tokenizer: PreTrainedTokenizer, prompt
         model=model,
         tokenizer=tokenizer,
         device=model.device,
-        num_return_sequences=1,
-        return_full_text=True,
+        truncation=True,
         max_new_tokens=64)
     return tuple(pipe(prompt)[0]['generated_text'] for prompt in prompts)
 
