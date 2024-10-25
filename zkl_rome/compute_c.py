@@ -1,9 +1,8 @@
 from dataclasses import dataclass
-from typing import Iterable
+from typing import Callable, Iterable
 
 import numpy as np
 import torch
-from tqdm import tqdm
 from transformers import PreTrainedModel
 
 from .batching import iter_by_batch
@@ -17,20 +16,22 @@ class ComputeCHparams:
     context_tokens_num: int
 
 
+@dataclass(kw_only=True)
+class ComputeCMetrics:
+    tokens: int
+
+
 def compute_c(*,
     model: PreTrainedModel,
     module: torch.nn.Module,
     dataset: Iterable[np.ndarray],
     hparams: ComputeCHparams,
-    verbose: bool = True
+    callback: Callable[[ComputeCMetrics], None] | None = None,
 ) -> torch.Tensor:
     iterator = iter_by_batch(dataset,
         batch_size=hparams.batch_samples_num,
         batch_len=hparams.context_tokens_num,
         return_mask=True)
-
-    if verbose:
-        progress_bar = tqdm(total=hparams.total_tokens_num)
 
     c_sum = 0
     c_num = 0
@@ -41,21 +42,25 @@ def compute_c(*,
                 break
 
         def hook(_, inputs):
-            nonlocal c_num, c_sum
             ks = inputs[0]
             ks = ks.reshape([-1, ks.shape[-1]])
             ms = batch_masks.reshape([-1])
             ks = ks[ms]
             ks = ks.to(torch.float32)
 
-            n = torch.sum(ms, dtype=torch.int64).cpu().item()
             c = torch.matmul(ks.T, ks)
+            n = torch.sum(ms, dtype=torch.int64)
 
-            if verbose:
-                progress_bar.update(n)
+            c = c.clone()
+            n = n.cpu().item()
 
+            nonlocal c_sum, c_num
+            c_sum += c
             c_num += n
-            c_sum += c.clone()
+
+            if callback is not None:
+                callback(ComputeCMetrics(tokens=c_num))
+
             raise StopForward
 
         batch_tokens = torch.from_numpy(batch_tokens).to(device=model.device, dtype=torch.int64)
