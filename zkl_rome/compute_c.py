@@ -24,11 +24,11 @@ class ComputeCMetrics:
 def compute_c(*,
     model: PreTrainedModel,
     module: torch.nn.Module,
-    dataset: Iterable[np.ndarray],
+    samples: Iterable[np.ndarray],
     hparams: ComputeCHparams,
     callback: Callable[[ComputeCMetrics], None] | None = None,
 ) -> torch.Tensor:
-    iterator = iter_by_batch(dataset,
+    iterator = iter_by_batch(samples,
         batch_size=hparams.batch_samples_num,
         batch_len=hparams.context_tokens_num,
         return_mask=True)

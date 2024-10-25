@@ -23,7 +23,7 @@ def rome(*,
     rewriting: TextRewriting | TokenizedRewriting,
     prefixes: Iterable[str | np.ndarray] | None = None,
     preservings: Iterable[TextPreserving | TokenizedPreserving] | None = None,
-    compute_c_dataset: Iterable[str | np.ndarray] | None = None,
+    compute_c_samples: Iterable[str | np.ndarray] | None = None,
     compute_c_hparams: ComputeCHparams | None = None,
     compute_c_callback: Callable[[ComputeCHparams], None] | None = None,
     cache_c_inv_file_path: os.PathLike | str | None = None,
@@ -54,21 +54,21 @@ def rome(*,
 
         preservings = map(tokenize, preservings)
 
-    if compute_c_dataset is not None:
+    if compute_c_samples is not None:
         def tokenize(sample: str | np.ndarray):
             if isinstance(sample, str):
                 sample = tokenizer.encode(sample)
             sample = np.asarray(sample, dtype=torch.int64)
             return sample
 
-        compute_c_dataset = map(tokenize, compute_c_dataset)
+        compute_c_samples = map(tokenize, compute_c_samples)
 
     module = model.get_submodule(module_name)
 
     c_inv = load_or_compute_c_inf(
         model=model,
         module=module,
-        compute_c_dataset=compute_c_dataset,
+        compute_c_samples=compute_c_samples,
         compute_c_hparams=compute_c_hparams,
         compute_c_callback=compute_c_callback,
         cache_c_inv_file_path=cache_c_inv_file_path)
@@ -123,7 +123,7 @@ def generate_preservings_by_default(
 def load_or_compute_c_inf(*,
     model: PreTrainedModel,
     module: torch.nn.Module,
-    compute_c_dataset: Iterable[np.ndarray] | None = None,
+    compute_c_samples: Iterable[np.ndarray] | None = None,
     compute_c_hparams: ComputeCHparams | None = None,
     compute_c_callback: Callable[[ComputeCHparams], None] | None = None,
     cache_c_inv_file_path: os.PathLike | str | None = None,
@@ -134,11 +134,11 @@ def load_or_compute_c_inf(*,
             c_inv = torch.load(cache_c_inv_file_path, map_location=model.device)
         except IOError:
             pass
-    if c_inv is None and compute_c_dataset is not None and compute_c_hparams is not None:
+    if c_inv is None and compute_c_samples is not None and compute_c_hparams is not None:
         c_inv = compute_c_inv(
             model=model,
             module=module,
-            compute_c_dataset=compute_c_dataset,
+            compute_c_samples=compute_c_samples,
             compute_c_hparams=compute_c_hparams,
             compute_c_callback=compute_c_callback)
     return c_inv
