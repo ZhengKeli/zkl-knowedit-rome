@@ -50,7 +50,7 @@ poetry install
 
 ## Features
 
-### Token level editing
+### Token Level Editing
 
 The original ROME is totally text-based, making it impossible to operate accurately on tokens.
 
