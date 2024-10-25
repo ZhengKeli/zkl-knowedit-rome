@@ -35,14 +35,14 @@ class ComputeVDeltaMetrics:
     loss: torch.Tensor
 
 
-def compute_v_delta(
-    hparams: ComputeVDeltaHparams,
+def compute_v_delta(*,
     model: PreTrainedModel,
     module: torch.nn.Module,
     prefixes: Iterable[np.ndarray],
     rewriting: TokenizedRewriting,
     preservings: Iterable[TokenizedPreserving],
-    v: torch.Tensor, *,
+    v: torch.Tensor,
+    hparams: ComputeVDeltaHparams,
     callback: Callable[[ComputeVDeltaMetrics], None] | None = None,
 ) -> torch.Tensor:
     prefixes = tuple(prefixes)

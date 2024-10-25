@@ -29,13 +29,13 @@ def compute_left_right(*,
         rewriting=rewriting)
 
     v_delta = compute_v_delta(
-        compute_v_delta_hparams,
-        model,
-        module,
-        prefixes,
-        rewriting,
-        preservings,
-        v,
+        model=model,
+        module=module,
+        prefixes=prefixes,
+        rewriting=rewriting,
+        preservings=preservings,
+        v=v,
+        hparams=compute_v_delta_hparams,
         callback=compute_v_delta_callback)
 
     if c_inv is not None:
