@@ -8,9 +8,9 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 project_dir_path = os.path.join(os.path.dirname(__file__), "..")
 sys.path.append(project_dir_path)
 
-from scripts.utils import iter_samples_for_compute_c, load_dataset_for_compute_c, print_v_delta_metrics
+from scripts.utils import compute_cosine_similarity, iter_compute_c_samples_from_wikipedia, print_v_delta_metrics
 from zkl_rome import ComputeCHparams, ComputeVDeltaHparams, GeneratePrefixesHparams, TextRewriting, compute_c, \
-    compute_left_right, generate_preservings_by_default, generate_prefixes
+    compute_left_right, generate_prefixes, generate_preservings_by_default
 
 # config
 
@@ -49,15 +49,6 @@ left_org_path = os.path.join(project_dir_path, "../original-rome/left.npy")
 right_org_path = os.path.join(project_dir_path, "../original-rome/right.npy")
 w_delta_org_path = os.path.join(project_dir_path, "../original-rome/w_delta.npy")
 
-
-# utils
-
-def compare(a1: torch.Tensor, a2: torch.Tensor):
-    a1 = torch.reshape(a1, [-1])
-    a2 = torch.reshape(a2, [-1])
-    return torch.nn.functional.cosine_similarity(a1, a2, dim=0)
-
-
 # execution
 
 print(f"Loading Model and Tokenizer")
@@ -67,53 +58,52 @@ tokenizer.pad_token = tokenizer.eos_token
 
 print(f"Applying ROME to model")
 module = model.get_submodule(module_name)
-rewriting_tokenized = rewriting.tokenize(tokenizer)
-prefixes_tokenized = generate_prefixes(model, tokenizer, generate_prefixes_hparams)
-preservings_tokenized = generate_preservings_by_default(tokenizer, rewriting_tokenized)
+rewriting = rewriting.tokenize(tokenizer)
+prefixes = generate_prefixes(model, tokenizer, generate_prefixes_hparams)
+preservings = generate_preservings_by_default(tokenizer, rewriting)
 
-dataset = load_dataset_for_compute_c()
-iterator = iter_samples_for_compute_c(dataset, tokenizer)
 c = compute_c(
     model=model,
     module=module,
-    dataset=iterator,
+    samples=iter_compute_c_samples_from_wikipedia(tokenizer),
     hparams=compute_c_hparams)
 c_inv = torch.inverse(c)
 
 (left, right) = compute_left_right(
     model=model,
     module=module,
-    rewriting=rewriting_tokenized,
-    prefixes=prefixes_tokenized,
-    preservings=preservings_tokenized,
+    prefixes=prefixes,
+    rewriting=rewriting,
+    preservings=preservings,
     c_inv=c_inv,
     compute_v_delta_hparams=compute_v_delta_hparams,
     compute_v_delta_callback=print_v_delta_metrics)
+
 w_delta = torch.outer(left, right)
 
 print(f"Comparing results")
 
 c_org = np.load(c_org_path)
 c_org = torch.from_numpy(c_org).to(c)
-c_sim = compare(c, c_org).item()
+c_sim = compute_cosine_similarity(c, c_org).item()
 print(f"{c_sim=}")
 
 c_inv_org = np.load(c_inv_org_path)
 c_inv_org = torch.from_numpy(c_inv_org).to(c_inv)
-c_inv_sim = compare(c_inv, c_inv_org).item()
+c_inv_sim = compute_cosine_similarity(c_inv, c_inv_org).item()
 print(f"{c_inv_sim=}")
 
 left_org = np.load(left_org_path)
 left_org = torch.from_numpy(left_org).to(left)
-left_sim = compare(left, left_org).item()
+left_sim = compute_cosine_similarity(left, left_org).item()
 print(f"{left_sim=}")
 
 right_org = np.load(right_org_path)
 right_org = torch.from_numpy(right_org).to(right)
-right_sim = compare(right, right_org).item()
+right_sim = compute_cosine_similarity(right, right_org).item()
 print(f"{right_sim=}")
 
 w_delta_org = np.load(w_delta_org_path)
 w_delta_org = torch.from_numpy(w_delta_org).to(w_delta)
-w_delta_sim = compare(w_delta, w_delta_org).item()
+w_delta_sim = compute_cosine_similarity(w_delta, w_delta_org).item()
 print(f"{w_delta_sim=}")

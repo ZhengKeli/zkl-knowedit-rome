@@ -1,6 +1,7 @@
 from typing import Iterable
 
 import numpy as np
+import torch
 from datasets import load_dataset
 from transformers import PreTrainedModel, PreTrainedTokenizer, pipeline
 
@@ -41,3 +42,9 @@ def print_v_delta_metrics(metrics: ComputeVDeltaMetrics):
         f"rewriting_loss={metrics.rewriting_loss.item():.4f}",
         f"preserving_loss={metrics.preserving_loss.item():.4f}",
         f"regularization_loss={metrics.regularization_loss.item():.4f}"]))
+
+
+def compute_cosine_similarity(a1: torch.Tensor, a2: torch.Tensor):
+    a1 = torch.reshape(a1, [-1])
+    a2 = torch.reshape(a2, [-1])
+    return torch.nn.functional.cosine_similarity(a1, a2, dim=0)
