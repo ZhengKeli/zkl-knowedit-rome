@@ -89,30 +89,6 @@ def rome(*,
     return left, right
 
 
-def load_or_compute_c_inf(*,
-    model: PreTrainedModel,
-    module: torch.nn.Module,
-    compute_c_dataset: Iterable[np.ndarray] | None = None,
-    compute_c_hparams: ComputeCHparams | None = None,
-    compute_c_callback: Callable[[ComputeCHparams], None] | None = None,
-    cache_c_inv_file_path: os.PathLike | str | None = None,
-) -> torch.Tensor | None:
-    c_inv = None
-    if cache_c_inv_file_path is not None:
-        try:
-            c_inv = torch.load(cache_c_inv_file_path, map_location=model.device)
-        except IOError:
-            pass
-    if c_inv is None and compute_c_dataset is not None and compute_c_hparams is not None:
-        c_inv = compute_c_inv(
-            model=model,
-            module=module,
-            compute_c_dataset=compute_c_dataset,
-            compute_c_hparams=compute_c_hparams,
-            compute_c_callback=compute_c_callback)
-    return c_inv
-
-
 def generate_prefixes_by_default(
     model: PreTrainedModel,
     tokenizer: PreTrainedTokenizer,
@@ -142,3 +118,27 @@ def generate_preservings_by_default(
         subject_head=0,
         subject_tail=len(rewriting.subject))
     return preserving,
+
+
+def load_or_compute_c_inf(*,
+    model: PreTrainedModel,
+    module: torch.nn.Module,
+    compute_c_dataset: Iterable[np.ndarray] | None = None,
+    compute_c_hparams: ComputeCHparams | None = None,
+    compute_c_callback: Callable[[ComputeCHparams], None] | None = None,
+    cache_c_inv_file_path: os.PathLike | str | None = None,
+) -> torch.Tensor | None:
+    c_inv = None
+    if cache_c_inv_file_path is not None:
+        try:
+            c_inv = torch.load(cache_c_inv_file_path, map_location=model.device)
+        except IOError:
+            pass
+    if c_inv is None and compute_c_dataset is not None and compute_c_hparams is not None:
+        c_inv = compute_c_inv(
+            model=model,
+            module=module,
+            compute_c_dataset=compute_c_dataset,
+            compute_c_hparams=compute_c_hparams,
+            compute_c_callback=compute_c_callback)
+    return c_inv
