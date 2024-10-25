@@ -5,12 +5,14 @@ import numpy as np
 import torch
 from transformers import PreTrainedModel, PreTrainedTokenizer
 
-from zkl_rome import GeneratePrefixesHparams, TokenizedPreserving, TokenizedRewriting, generate_prefixes
 from .apply_left_right import apply_left_right
 from .compute_c import ComputeCHparams
 from .compute_c_inv import compute_c_inv
 from .compute_left_right import compute_left_right
 from .compute_v_delta import ComputeVDeltaHparams, ComputeVDeltaMetrics
+from .generate_prefixes import GeneratePrefixesHparams, generate_prefixes
+from .preserving import TextPreserving, TokenizedPreserving
+from .rewriting import TextRewriting, TokenizedRewriting
 
 
 def rome(*,
@@ -18,16 +20,49 @@ def rome(*,
     model: PreTrainedModel,
     tokenizer: PreTrainedTokenizer | None,
     module_name: str | None = None,
-    rewriting: TokenizedRewriting,
-    prefixes: Iterable[np.ndarray] | None = None,
-    preservings: Iterable[TokenizedPreserving] | None = None,
-    compute_c_dataset: Iterable[np.ndarray] | None = None,
+    rewriting: TextRewriting | TokenizedRewriting,
+    prefixes: Iterable[str | np.ndarray] | None = None,
+    preservings: Iterable[TextPreserving | TokenizedPreserving] | None = None,
+    compute_c_dataset: Iterable[str | np.ndarray] | None = None,
     compute_c_hparams: ComputeCHparams | None = None,
     compute_c_callback: Callable[[ComputeCHparams], None] | None = None,
     cache_c_inv_file_path: os.PathLike | str | None = None,
     compute_v_delta_hparams: ComputeVDeltaHparams,
     compute_v_delta_callback: Callable[[ComputeVDeltaMetrics], None] | None = None,
 ) -> tuple[torch.Tensor, torch.Tensor]:
+    if isinstance(rewriting, TextRewriting):
+        rewriting = rewriting.tokenize(tokenizer)
+
+    if prefixes is None:
+        prefixes = generate_prefixes_by_default(model, tokenizer)
+    else:
+        def tokenize(prefix: str | np.ndarray):
+            if isinstance(prefix, str):
+                prefix = tokenizer.encode(prefix)
+            prefix = np.asarray(prefix, dtype=torch.int64)
+            return prefix
+
+        prefixes = map(tokenize, prefixes)
+
+    if preservings is None:
+        preservings = generate_preservings_by_default(tokenizer, rewriting)
+    else:
+        def tokenize(preserving: TextPreserving | TokenizedPreserving):
+            if isinstance(preserving, TextPreserving):
+                preserving = preserving.tokenize(tokenizer)
+            return preserving
+
+        preservings = map(tokenize, preservings)
+
+    if compute_c_dataset is not None:
+        def tokenize(sample: str | np.ndarray):
+            if isinstance(sample, str):
+                sample = tokenizer.encode(sample)
+            sample = np.asarray(sample, dtype=torch.int64)
+            return sample
+
+        compute_c_dataset = map(tokenize, compute_c_dataset)
+
     module = model.get_submodule(module_name)
 
     c_inv = load_or_compute_c_inf(
@@ -37,12 +72,6 @@ def rome(*,
         compute_c_hparams=compute_c_hparams,
         compute_c_callback=compute_c_callback,
         cache_c_inv_file_path=cache_c_inv_file_path)
-
-    if prefixes is None:
-        prefixes = generate_prefixes_by_default(model, tokenizer)
-
-    if preservings is None:
-        preservings = generate_preservings_by_default(tokenizer, rewriting)
 
     (left, right) = compute_left_right(
         model=model,
