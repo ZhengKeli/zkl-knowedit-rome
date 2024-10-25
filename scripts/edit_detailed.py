@@ -17,8 +17,6 @@ device = "cuda"
 model_name = "gpt2-medium"
 module_name = "transformer.h.8.mlp.c_proj"
 
-c_inv_cache_path = os.path.join(project_dir_path, f"caches/{model_name}/{module_name}/c_inv.pt")
-
 rewriting = TextRewriting(
     prompt="Steve Jobs is the founder of",
     subject="Steve Jobs",
@@ -51,6 +49,8 @@ compute_v_delta_hparams = ComputeVDeltaHparams(
     preserving_loss_k=0.0625,
     regularization_loss_k=0.5,
     regularization_constraint_factor=3.0)
+
+c_inv_cache_path = os.path.join(project_dir_path, f"caches/{model_name}/{module_name}/c_inv.pt")
 
 # execution
 
