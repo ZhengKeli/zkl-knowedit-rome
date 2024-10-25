@@ -68,7 +68,11 @@ preservings_tokenized = make_default_preservings(tokenizer, rewriting_tokenized)
 
 dataset = load_dataset_for_compute_c()
 iterator = iter_samples_for_compute_c(dataset, tokenizer)
-c = compute_c(compute_c_hparams, model, module, iterator)
+c = compute_c(
+    model=model,
+    module=module,
+    dataset=iterator,
+    hparams=compute_c_hparams)
 c_inv = torch.inverse(c)
 
 (left, right) = compute_left_right(

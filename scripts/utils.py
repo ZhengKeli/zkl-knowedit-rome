@@ -35,7 +35,11 @@ def compute_c_inv(
 ) -> torch.Tensor:
     dataset = load_dataset_for_compute_c()
     iterator = iter_samples_for_compute_c(dataset, tokenizer)
-    c = compute_c(hparams, model, module, iterator)
+    c = compute_c(
+        model=model,
+        module=module,
+        dataset=iterator,
+        hparams=hparams)
     c_inv = torch.inverse(c)
     return c_inv
 

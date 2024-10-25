@@ -17,13 +17,13 @@ class ComputeCHparams:
     context_tokens_num: int
 
 
-def compute_c(
-    hparams: ComputeCHparams,
+def compute_c(*,
     model: PreTrainedModel,
     module: torch.nn.Module,
     dataset: Iterable[np.ndarray],
+    hparams: ComputeCHparams,
     verbose: bool = True
-):
+) -> torch.Tensor:
     iterator = iter_by_batch(dataset,
         batch_size=hparams.batch_samples_num,
         batch_len=hparams.context_tokens_num,
