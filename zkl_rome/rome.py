@@ -39,10 +39,10 @@ def rome(*,
         cache_c_inv_file_path=cache_c_inv_file_path)
 
     if prefixes is None:
-        prefixes = default_prefixes(model, tokenizer)
+        prefixes = generate_prefixes_by_default(model, tokenizer)
 
     if preservings is None:
-        preservings = default_preservings(tokenizer, rewriting)
+        preservings = generate_preservings_by_default(tokenizer, rewriting)
 
     (left, right) = compute_left_right(
         model=model,
@@ -84,7 +84,7 @@ def load_or_compute_c_inf(*,
     return c_inv
 
 
-def default_prefixes(
+def generate_prefixes_by_default(
     model: PreTrainedModel,
     tokenizer: PreTrainedTokenizer,
 ) -> tuple[np.ndarray, ...]:
@@ -102,7 +102,7 @@ def default_prefixes(
                 num_sequences=10)))
 
 
-def default_preservings(
+def generate_preservings_by_default(
     tokenizer: PreTrainedTokenizer,
     rewriting: TokenizedRewriting,
 ) -> tuple[TokenizedPreserving, ...]:

@@ -5,6 +5,6 @@ from .compute_k_v import compute_k_v
 from .compute_left_right import compute_left_right
 from .compute_v_delta import ComputeVDeltaHparams, ComputeVDeltaMetrics, compute_v_delta
 from .generate_prefixes import GeneratePrefixesHparams, generate_prefixes
-from .preserving import TextPreserving, TokenizedPreserving, make_default_preservings
+from .preserving import TextPreserving, TokenizedPreserving
 from .rewriting import TextRewriting, TokenizedRewriting
-from .rome import default_prefixes, default_preservings, load_or_compute_c_inf, rome
+from .rome import generate_prefixes_by_default, generate_preservings_by_default, load_or_compute_c_inf, rome

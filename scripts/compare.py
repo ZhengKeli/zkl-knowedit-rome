@@ -10,7 +10,7 @@ sys.path.append(project_dir_path)
 
 from scripts.utils import iter_samples_for_compute_c, load_dataset_for_compute_c, print_v_delta_metrics
 from zkl_rome import ComputeCHparams, ComputeVDeltaHparams, GeneratePrefixesHparams, TextRewriting, compute_c, \
-    compute_left_right, make_default_preservings
+    compute_left_right, generate_preservings_by_default, generate_prefixes
 
 # config
 
@@ -69,7 +69,7 @@ print(f"Applying ROME to model")
 module = model.get_submodule(module_name)
 rewriting_tokenized = rewriting.tokenize(tokenizer)
 prefixes_tokenized = generate_prefixes(model, tokenizer, generate_prefixes_hparams)
-preservings_tokenized = make_default_preservings(tokenizer, rewriting_tokenized)
+preservings_tokenized = generate_preservings_by_default(tokenizer, rewriting_tokenized)
 
 dataset = load_dataset_for_compute_c()
 iterator = iter_samples_for_compute_c(dataset, tokenizer)
