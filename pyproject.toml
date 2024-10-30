@@ -3,7 +3,7 @@ requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
-name = "zkl_rome"
+name = "zkl-rome"
 version = "0.3.0"
 readme = "README.md"
 description = "A reimplementation of ROME with better engineering."
