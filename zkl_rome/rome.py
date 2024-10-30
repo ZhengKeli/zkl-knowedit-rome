@@ -23,7 +23,7 @@ def rome(*,
     rewriting: TextRewriting | TokenizedRewriting,
     prefixes: Iterable[str | np.ndarray] | None = None,
     preservings: Iterable[TextPreserving | TokenizedPreserving] | None = None,
-    compute_c_samples: Iterable[str | np.ndarray] | None = None,
+    compute_c_samples: Iterable[str | np.ndarray] | Callable[[], Iterable[str | np.ndarray]] | None = None,
     compute_c_hparams: ComputeCHparams | None = None,
     compute_c_callback: Callable[[ComputeCMetrics], None] | None = None,
     cache_c_inv_file_path: os.PathLike | str | None = None,
@@ -61,7 +61,11 @@ def rome(*,
             sample = np.asarray(sample, dtype=torch.int64)
             return sample
 
-        compute_c_samples = map(tokenize, compute_c_samples)
+        if isinstance(compute_c_samples, Callable):
+            compute_c_samples_callable = compute_c_samples
+            compute_c_samples = lambda: map(tokenize, compute_c_samples_callable())
+        else:
+            compute_c_samples = map(tokenize, compute_c_samples)
 
     module = model.get_submodule(module_name)
 
@@ -123,7 +127,7 @@ def generate_preservings_by_default(
 def load_or_compute_c_inv(*,
     model: PreTrainedModel,
     module: torch.nn.Module,
-    compute_c_samples: Iterable[np.ndarray] | None = None,
+    compute_c_samples: Iterable[np.ndarray] | Callable[[], Iterable[np.ndarray]] | None = None,
     compute_c_hparams: ComputeCHparams | None = None,
     compute_c_callback: Callable[[ComputeCMetrics], None] | None = None,
     cache_c_inv_file_path: os.PathLike | str | None = None,
@@ -135,6 +139,8 @@ def load_or_compute_c_inv(*,
         except IOError:
             pass
     if c_inv is None and compute_c_samples is not None and compute_c_hparams is not None:
+        if isinstance(compute_c_samples, Callable):
+            compute_c_samples = compute_c_samples()
         c_inv = compute_c_inv(
             model=model,
             module=module,
