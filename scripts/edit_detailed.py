@@ -10,7 +10,7 @@ sys.path.append(project_dir_path)
 from scripts.utils import generate_text, iter_compute_c_samples_from_wikipedia, print_compute_c_metrics, \
     print_compute_v_delta_metrics
 from zkl_rome import ComputeCHparams, ComputeVDeltaHparams, GeneratePrefixesHparams, TextRewriting, apply_left_right, \
-    compute_left_right, generate_prefixes, generate_preservings_by_default, load_or_compute_c_inf
+    compute_left_right, generate_prefixes, generate_preservings_by_default, load_or_compute_c_inv
 
 # config
 
@@ -70,7 +70,7 @@ rewriting = rewriting.tokenize(tokenizer)
 prefixes = generate_prefixes(model, tokenizer, generate_prefixes_hparams)
 preservings = generate_preservings_by_default(tokenizer, rewriting)
 
-c_inv = load_or_compute_c_inf(
+c_inv = load_or_compute_c_inv(
     model=model,
     module=module,
     compute_c_samples=iter_compute_c_samples_from_wikipedia(tokenizer),

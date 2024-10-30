@@ -65,7 +65,7 @@ def rome(*,
 
     module = model.get_submodule(module_name)
 
-    c_inv = load_or_compute_c_inf(
+    c_inv = load_or_compute_c_inv(
         model=model,
         module=module,
         compute_c_samples=compute_c_samples,
@@ -120,7 +120,7 @@ def generate_preservings_by_default(
     return preserving,
 
 
-def load_or_compute_c_inf(*,
+def load_or_compute_c_inv(*,
     model: PreTrainedModel,
     module: torch.nn.Module,
     compute_c_samples: Iterable[np.ndarray] | None = None,
