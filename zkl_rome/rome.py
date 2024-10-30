@@ -39,7 +39,7 @@ def rome(*,
         def tokenize(prefix: str | np.ndarray):
             if isinstance(prefix, str):
                 prefix = tokenizer.encode(prefix)
-            prefix = np.asarray(prefix, dtype=torch.int64)
+            prefix = np.asarray(prefix, dtype=np.int64)
             return prefix
 
         prefixes = map(tokenize, prefixes)
@@ -58,7 +58,7 @@ def rome(*,
         def tokenize(sample: str | np.ndarray):
             if isinstance(sample, str):
                 sample = tokenizer.encode(sample)
-            sample = np.asarray(sample, dtype=torch.int64)
+            sample = np.asarray(sample, dtype=np.int64)
             return sample
 
         if isinstance(compute_c_samples, Callable):
