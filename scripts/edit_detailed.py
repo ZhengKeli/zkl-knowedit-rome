@@ -1,6 +1,7 @@
 import os
 import sys
 
+import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
 project_dir_path = os.path.join(os.path.dirname(__file__), "..")
@@ -13,10 +14,10 @@ from zkl_rome import ComputeCHparams, ComputeVDeltaHparams, GeneratePrefixesHpar
 
 # config
 
-device = "cuda"
-
 model_name = "gpt2-medium"
 module_name = "transformer.h.8.mlp.c_proj"
+
+device = "cuda" if torch.cuda.is_available() else "cpu"
 
 rewriting = TextRewriting(
     prompt="Steve Jobs is the founder of",
