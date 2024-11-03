@@ -1,10 +1,10 @@
-from typing import Callable, Iterable
+from typing import Iterable
 
 import numpy as np
 import torch
 from transformers import PreTrainedModel
 
-from .compute_c import ComputeCHparams, ComputeCMetrics, compute_c
+from .compute_c import ComputeCCallback, ComputeCHparams, compute_c
 
 
 def compute_c_inv(*,
@@ -12,7 +12,7 @@ def compute_c_inv(*,
     module: torch.nn.Module,
     compute_c_samples: Iterable[np.ndarray],
     compute_c_hparams: ComputeCHparams,
-    compute_c_callback: Callable[[ComputeCMetrics], None] | None = None,
+    compute_c_callback: ComputeCCallback | None = None,
 ) -> torch.Tensor:
     c = compute_c(
         model=model,

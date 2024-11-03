@@ -1,5 +1,6 @@
+import abc
 from dataclasses import dataclass
-from typing import Callable, Iterable
+from typing import Iterable
 
 import numpy as np
 import torch
@@ -21,21 +22,38 @@ class ComputeCMetrics:
     tokens: int
 
 
+class ComputeCCallback(abc.ABC):
+    @abc.abstractmethod
+    def on_start(self):
+        pass
+
+    @abc.abstractmethod
+    def on_batch(self, metrics: ComputeCMetrics):
+        pass
+
+    @abc.abstractmethod
+    def on_stop(self, metrics: ComputeCMetrics):
+        pass
+
+
 def compute_c(*,
     model: PreTrainedModel,
     module: torch.nn.Module,
     samples: Iterable[np.ndarray],
     hparams: ComputeCHparams,
-    callback: Callable[[ComputeCMetrics], None] | None = None,
+    callback: ComputeCCallback | None = None,
 ) -> torch.Tensor:
     iterator = iter_by_batch(samples,
         batch_size=hparams.batch_samples_num,
         batch_len=hparams.context_tokens_num,
         return_mask=True)
 
+    if callback is not None:
+        callback.on_start()
+
     c_sum = 0
     c_num = 0
-
+    metrics = None
     for batch_tokens, batch_masks in iterator:
         if hparams.total_tokens_num is not None:
             if c_num >= hparams.total_tokens_num:
@@ -59,7 +77,8 @@ def compute_c(*,
             c_num += n
 
             if callback is not None:
-                callback(ComputeCMetrics(tokens=c_num))
+                metrics = ComputeCMetrics(tokens=c_num)
+                callback.on_batch(metrics)
 
             raise StopForward
 
@@ -70,5 +89,9 @@ def compute_c(*,
 
     if not isinstance(c_sum, torch.Tensor):
         raise ValueError("At least one sample must be processed to compute C!")
+
+    if callback is not None:
+        assert isinstance(metrics, ComputeCMetrics)
+        callback.on_stop(metrics)
 
     return c_sum / c_num

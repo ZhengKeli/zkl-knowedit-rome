@@ -6,7 +6,7 @@ import torch
 from transformers import PreTrainedModel, PreTrainedTokenizer
 
 from .apply_left_right import apply_left_right
-from .compute_c import ComputeCHparams, ComputeCMetrics
+from .compute_c import ComputeCCallback, ComputeCHparams
 from .compute_c_inv import compute_c_inv
 from .compute_left_right import compute_left_right
 from .compute_v_delta import ComputeVDeltaCallback, ComputeVDeltaHparams
@@ -25,7 +25,7 @@ def rome(*,
     preservings: Iterable[TextPreserving | TokenizedPreserving] | None = None,
     compute_c_samples: Iterable[str | np.ndarray] | Callable[[], Iterable[str | np.ndarray]] | None = None,
     compute_c_hparams: ComputeCHparams | None = None,
-    compute_c_callback: Callable[[ComputeCMetrics], None] | None = None,
+    compute_c_callback: ComputeCCallback | None = None,
     cache_c_inv_file_path: os.PathLike | str | None = None,
     compute_v_delta_hparams: ComputeVDeltaHparams,
     compute_v_delta_callback: ComputeVDeltaCallback | None = None,
@@ -129,7 +129,7 @@ def load_or_compute_c_inv(*,
     module: torch.nn.Module,
     compute_c_samples: Iterable[np.ndarray] | Callable[[], Iterable[np.ndarray]] | None = None,
     compute_c_hparams: ComputeCHparams | None = None,
-    compute_c_callback: Callable[[ComputeCMetrics], None] | None = None,
+    compute_c_callback: ComputeCCallback | None = None,
     cache_c_inv_file_path: os.PathLike | str | None = None,
 ) -> torch.Tensor | None:
     c_inv = None
