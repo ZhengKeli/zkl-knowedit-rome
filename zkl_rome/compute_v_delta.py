@@ -1,3 +1,4 @@
+import abc
 from dataclasses import dataclass
 from itertools import count
 from typing import Callable, Iterable
@@ -35,6 +36,20 @@ class ComputeVDeltaMetrics:
     loss: torch.Tensor
 
 
+class ComputeVDeltaCallback(abc.ABC):
+    @abc.abstractmethod
+    def on_start(self):
+        pass
+
+    @abc.abstractmethod
+    def on_step(self, metrics: ComputeVDeltaMetrics):
+        pass
+
+    @abc.abstractmethod
+    def on_stop(self, metrics: ComputeVDeltaMetrics):
+        pass
+
+
 def compute_v_delta(*,
     model: PreTrainedModel,
     module: torch.nn.Module,
@@ -43,7 +58,7 @@ def compute_v_delta(*,
     preservings: Iterable[TokenizedPreserving],
     v: torch.Tensor,
     hparams: ComputeVDeltaHparams,
-    callback: Callable[[ComputeVDeltaMetrics], None] | None = None,
+    callback: ComputeVDeltaCallback | None = None,
 ) -> torch.Tensor:
     prefixes = tuple(prefixes)
 
@@ -88,7 +103,12 @@ def compute_v_delta(*,
             output[i, idx, :] += v_delta
         return output
 
+    # Call callback
+    if callback is not None:
+        callback.on_start()
+
     # Execute optimization
+    metrics = None
     for step_i in count():
         # Forward propagation
         with no_grad_from(*model.parameters()), forward_output_hook(module, edit_output_fn):
@@ -122,15 +142,16 @@ def compute_v_delta(*,
                 hparams.preserving_loss_k * preserving_loss +
                 hparams.regularization_loss_k * regularization_loss)
 
-        # Collect metrics
+        # Call callback
         if callback is not None:
-            callback(ComputeVDeltaMetrics(
+            metrics = ComputeVDeltaMetrics(
                 step=step_i,
                 rewriting_acc=rewriting_acc.detach(),
                 rewriting_loss=rewriting_loss.detach(),
                 preserving_loss=preserving_loss.detach(),
                 regularization_loss=regularization_loss.detach(),
-                loss=loss.detach()))
+                loss=loss.detach())
+            callback.on_step(metrics)
 
         # Stop by steps num
         if hparams.stopping_steps_num is not None:
@@ -153,5 +174,10 @@ def compute_v_delta(*,
             if v_delta.norm() > max_norm:
                 with torch.no_grad():
                     v_delta[...] = v_delta * max_norm / v_delta.norm()
+
+    # Call callback
+    if callback is not None:
+        assert isinstance(metrics, ComputeVDeltaMetrics)
+        callback.on_stop(metrics)
 
     return v_delta

@@ -1,11 +1,11 @@
-from typing import Callable, Iterable
+from typing import Iterable
 
 import numpy as np
 import torch
 from transformers import PreTrainedModel
 
 from .compute_k_v import compute_k_v
-from .compute_v_delta import ComputeVDeltaHparams, ComputeVDeltaMetrics, compute_v_delta
+from .compute_v_delta import ComputeVDeltaCallback, ComputeVDeltaHparams, compute_v_delta
 from .preserving import TokenizedPreserving
 from .rewriting import TokenizedRewriting
 
@@ -18,7 +18,7 @@ def compute_left_right(*,
     preservings: Iterable[TokenizedPreserving],
     c_inv: torch.Tensor | None = None,
     compute_v_delta_hparams: ComputeVDeltaHparams,
-    compute_v_delta_callback: Callable[[ComputeVDeltaMetrics], None] | None = None,
+    compute_v_delta_callback: ComputeVDeltaCallback | None = None,
 ) -> tuple[torch.Tensor, torch.Tensor]:
     prefixes = tuple(prefixes)
 

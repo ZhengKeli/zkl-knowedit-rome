@@ -9,7 +9,7 @@ from .apply_left_right import apply_left_right
 from .compute_c import ComputeCHparams, ComputeCMetrics
 from .compute_c_inv import compute_c_inv
 from .compute_left_right import compute_left_right
-from .compute_v_delta import ComputeVDeltaHparams, ComputeVDeltaMetrics
+from .compute_v_delta import ComputeVDeltaCallback, ComputeVDeltaHparams
 from .generate_prefixes import GeneratePrefixesHparams, generate_prefixes
 from .preserving import TextPreserving, TokenizedPreserving
 from .rewriting import TextRewriting, TokenizedRewriting
@@ -28,7 +28,7 @@ def rome(*,
     compute_c_callback: Callable[[ComputeCMetrics], None] | None = None,
     cache_c_inv_file_path: os.PathLike | str | None = None,
     compute_v_delta_hparams: ComputeVDeltaHparams,
-    compute_v_delta_callback: Callable[[ComputeVDeltaMetrics], None] | None = None,
+    compute_v_delta_callback: ComputeVDeltaCallback | None = None,
 ) -> tuple[torch.Tensor, torch.Tensor]:
     if isinstance(rewriting, TextRewriting):
         rewriting = rewriting.tokenize(tokenizer)
