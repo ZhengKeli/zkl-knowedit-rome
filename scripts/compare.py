@@ -9,9 +9,9 @@ project_dir_path = os.path.join(os.path.dirname(__file__), "..")
 sys.path.append(project_dir_path)
 
 from scripts.utils import compute_cosine_similarity
-from zkl_rome import ComputeCHparams, ComputeVDeltaHparams, GeneratePrefixesHparams, TextRewriting, \
-    TqdmComputeCCallback, TqdmComputeVDeltaCallback, WikipediaComputeCSamples, compute_c, compute_left_right, \
-    generate_prefixes, generate_preservings_by_default
+from zkl_rome import ComputeCHparams, ComputeVDeltaHparams, TextRewriting, TqdmComputeCCallback, \
+    TqdmComputeVDeltaCallback, WikipediaComputeCSamples, compute_c, compute_left_right, generate_prefixes_by_default, \
+    generate_preservings_by_default
 
 # config
 
@@ -24,11 +24,6 @@ rewriting = TextRewriting(
     prompt="Steve Jobs is the founder of",
     subject="Steve Jobs",
     target=" Microsoft")
-
-generate_prefixes_hparams = GeneratePrefixesHparams(
-    seperator=". ",
-    num_tokens=10,
-    num_sequences=20)
 
 compute_c_hparams = ComputeCHparams(
     batch_samples_num=4,
@@ -60,7 +55,7 @@ tokenizer.pad_token = tokenizer.eos_token
 print(f"Computing ROME intermediates")
 module = model.get_submodule(module_name)
 rewriting = rewriting.tokenize(tokenizer)
-prefixes = generate_prefixes(model, tokenizer, generate_prefixes_hparams)
+prefixes = generate_prefixes_by_default(model, tokenizer)
 preservings = generate_preservings_by_default(tokenizer, rewriting)
 
 c = compute_c(

@@ -8,9 +8,9 @@ project_dir_path = os.path.join(os.path.dirname(__file__), "..")
 sys.path.append(project_dir_path)
 
 from scripts.utils import generate_text
-from zkl_rome import ComputeCHparams, ComputeVDeltaHparams, GeneratePrefixesHparams, TextRewriting, \
-    TqdmComputeCCallback, TqdmComputeVDeltaCallback, WikipediaComputeCSamples, apply_left_right, compute_left_right, \
-    generate_prefixes, generate_preservings_by_default, load_or_compute_c_inv
+from zkl_rome import ComputeCHparams, ComputeVDeltaHparams, TextRewriting, TqdmComputeCCallback, \
+    TqdmComputeVDeltaCallback, WikipediaComputeCSamples, apply_left_right, compute_left_right, \
+    generate_prefixes_by_default, generate_preservings_by_default, load_or_compute_c_inv
 
 # config
 
@@ -32,11 +32,6 @@ inspecting_prompts = [
     "Steve Jobs worked for",
     "Steve Jobs was the founder of",
 ]
-
-generate_prefixes_hparams = GeneratePrefixesHparams(
-    seperator=". ",
-    num_tokens=10,
-    num_sequences=20)
 
 compute_c_hparams = ComputeCHparams(
     batch_samples_num=4,
@@ -67,7 +62,7 @@ pre_update_text = generate_text(model, tokenizer, inspecting_prompts)
 print(f"Applying ROME to model")
 module = model.get_submodule(module_name)
 rewriting = rewriting.tokenize(tokenizer)
-prefixes = generate_prefixes(model, tokenizer, generate_prefixes_hparams)
+prefixes = generate_prefixes_by_default(model, tokenizer)
 preservings = generate_preservings_by_default(tokenizer, rewriting)
 
 c_inv = load_or_compute_c_inv(
