@@ -6,7 +6,7 @@ import torch
 from transformers import PreTrainedModel, PreTrainedTokenizer
 
 from .apply_left_right import apply_left_right
-from .compute_c import ComputeCCallback, ComputeCHparams
+from .compute_c import ComputeCCallback, ComputeCHparams, ComputeCMetrics
 from .compute_c_inv import compute_c_inv
 from .compute_left_right import compute_left_right
 from .compute_v_delta import ComputeVDeltaCallback, ComputeVDeltaHparams
@@ -151,3 +151,21 @@ def load_or_compute_c_inv(*,
             os.makedirs(os.path.dirname(cache_c_inv_file_path), exist_ok=True)
             torch.save(c_inv, cache_c_inv_file_path)
     return c_inv
+
+
+class TqdmComputeCCallback(ComputeCCallback):
+    def __init__(self):
+        from tqdm import tqdm
+        self.progressbar: tqdm | None = None
+
+    def on_start(self, hparams: ComputeCHparams):
+        from tqdm import tqdm
+        self.progressbar = tqdm(
+            desc="Computing c",
+            total=hparams.total_tokens_num)
+
+    def on_batch(self, metrics: ComputeCMetrics):
+        self.progressbar.update(metrics.tokens - self.progressbar.n)
+
+    def on_stop(self, metrics: ComputeCMetrics):
+        self.progressbar.close()
