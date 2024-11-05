@@ -24,7 +24,7 @@ class ComputeCMetrics:
 
 class ComputeCCallback(abc.ABC):
     @abc.abstractmethod
-    def on_start(self):
+    def on_start(self, hparams: ComputeCHparams):
         pass
 
     @abc.abstractmethod
@@ -49,7 +49,7 @@ def compute_c(*,
         return_mask=True)
 
     if callback is not None:
-        callback.on_start()
+        callback.on_start(hparams)
 
     c_sum = 0
     c_num = 0
