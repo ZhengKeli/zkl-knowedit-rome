@@ -161,6 +161,36 @@ def load_or_compute_c_inv(*,
     return c_inv
 
 
+class WikipediaComputeCSamples(Iterable[str | np.ndarray]):
+    def __init__(self, *,
+        path: os.PathLike | str = "wikipedia",
+        name: str = "20220301.en",
+        split: Literal['train', 'validation', 'test'] = "train",
+        streaming: bool = True,
+        tokenizer: PreTrainedTokenizer | None = None
+    ):
+        self.path = path
+        self.name = name
+        self.split = split
+        self.streaming = streaming
+        self.tokenizer = tokenizer
+
+    def __iter__(self):
+        from datasets import load_dataset
+        dataset = load_dataset(
+            self.path,
+            self.name,
+            split=self.split,
+            streaming=self.streaming)
+
+        for sample in dataset:
+            sample = sample["text"]
+            if self.tokenizer is not None:
+                sample = self.tokenizer.encode(sample)
+                sample = np.asarray(sample, dtype=np.int64)
+            yield sample
+
+
 class TqdmComputeCCallback(ComputeCCallback):
     def __init__(self):
         from tqdm import tqdm
