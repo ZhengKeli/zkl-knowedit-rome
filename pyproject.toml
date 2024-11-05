@@ -1,18 +1,18 @@
-[build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
-
-[tool.poetry]
+[project]
 name = "zkl-rome"
 version = "0.3.2"
 readme = "README.md"
 description = "A reimplementation of ROME with better engineering."
-authors = ["Keli Zheng <zhengkeli2009@126.com>"]
+authors = [{ name = "Keli Zheng", email = "zhengkeli2009@126.com" }]
 
-[tool.poetry.dependencies]
-python = "^3.10"
-torch = "^2.4.1"
-transformers = "^4.44.2"
+requires-python = ">=3.10"
+dependencies = [
+    "tqdm>=4.66.6",
+    "torch>=2.4.1",
+    "datasets>=3.0.1",
+    "transformers>=4.44.2",
+]
 
-[tool.poetry.group.dev.dependencies]
-datasets = "^3.0.1"
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
