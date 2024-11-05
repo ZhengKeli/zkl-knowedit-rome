@@ -5,8 +5,6 @@ import torch
 from datasets import load_dataset
 from transformers import PreTrainedModel, PreTrainedTokenizer, pipeline
 
-from zkl_rome import ComputeCMetrics, ComputeVDeltaMetrics
-
 
 def iter_compute_c_samples_from_wikipedia(tokenizer: PreTrainedTokenizer | None = None):
     dataset = load_dataset(
@@ -31,20 +29,6 @@ def generate_text(model: PreTrainedModel, tokenizer: PreTrainedTokenizer, prompt
         truncation=True,
         max_new_tokens=64)
     return tuple(pipe(prompt)[0]['generated_text'] for prompt in prompts)
-
-
-def print_compute_c_metrics(metrics: ComputeCMetrics):
-    print(f"tokens={metrics.processed_tokens_num}")
-
-
-def print_compute_v_delta_metrics(metrics: ComputeVDeltaMetrics):
-    print(", ".join([
-        f"step={metrics.processed_steps_num}",
-        f"loss={metrics.loss.item():.4f}",
-        f"rewriting_acc={metrics.rewriting_acc.mean().item():.4f}",
-        f"rewriting_loss={metrics.rewriting_loss.item():.4f}",
-        f"preserving_loss={metrics.preserving_loss.item():.4f}",
-        f"regularization_loss={metrics.regularization_loss.item():.4f}"]))
 
 
 def compute_cosine_similarity(a1: torch.Tensor, a2: torch.Tensor):

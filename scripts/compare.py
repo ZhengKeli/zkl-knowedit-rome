@@ -8,10 +8,10 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 project_dir_path = os.path.join(os.path.dirname(__file__), "..")
 sys.path.append(project_dir_path)
 
-from scripts.utils import compute_cosine_similarity, iter_compute_c_samples_from_wikipedia, print_compute_c_metrics, \
-    print_compute_v_delta_metrics
-from zkl_rome import ComputeCHparams, ComputeVDeltaHparams, GeneratePrefixesHparams, TextRewriting, compute_c, \
-    compute_left_right, generate_prefixes, generate_preservings_by_default
+from scripts.utils import compute_cosine_similarity, iter_compute_c_samples_from_wikipedia
+from zkl_rome import ComputeCHparams, ComputeVDeltaHparams, GeneratePrefixesHparams, TextRewriting, \
+    TqdmComputeCCallback, TqdmComputeVDeltaCallback, compute_c, compute_left_right, generate_prefixes, \
+    generate_preservings_by_default
 
 # config
 
@@ -68,7 +68,7 @@ c = compute_c(
     module=module,
     samples=iter_compute_c_samples_from_wikipedia(tokenizer),
     hparams=compute_c_hparams,
-    callback=print_compute_c_metrics)
+    callback=TqdmComputeCCallback())
 c_inv = torch.inverse(c)
 
 (left, right) = compute_left_right(
@@ -79,7 +79,7 @@ c_inv = torch.inverse(c)
     preservings=preservings,
     c_inv=c_inv,
     compute_v_delta_hparams=compute_v_delta_hparams,
-    compute_v_delta_callback=print_compute_v_delta_metrics)
+    compute_v_delta_callback=TqdmComputeVDeltaCallback())
 
 w_delta = torch.outer(left, right)
 
