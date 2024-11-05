@@ -28,7 +28,8 @@ class ComputeVDeltaHparams:
 
 @dataclass(kw_only=True)
 class ComputeVDeltaMetrics:
-    step: int
+    processed_steps_num: int
+
     rewriting_acc: torch.Tensor
     rewriting_loss: torch.Tensor
     preserving_loss: torch.Tensor
@@ -145,7 +146,7 @@ def compute_v_delta(*,
         # Call callback
         if callback is not None:
             metrics = ComputeVDeltaMetrics(
-                step=step_i,
+                processed_steps_num=step_i,
                 rewriting_acc=rewriting_acc.detach(),
                 rewriting_loss=rewriting_loss.detach(),
                 preserving_loss=preserving_loss.detach(),

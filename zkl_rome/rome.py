@@ -183,7 +183,7 @@ class TqdmComputeVDeltaCallback(ComputeVDeltaCallback):
             total=hparams.stopping_steps_num)
 
     def on_step(self, metrics: ComputeVDeltaMetrics):
-        self.progressbar.update(metrics.step - self.progressbar.n)
+        self.progressbar.update(metrics.processed_steps_num - self.progressbar.n)
         self.progressbar.set_postfix_str(", ".join([
             f"loss={metrics.loss.item():.4f}",
             f"rewriting_acc={metrics.rewriting_acc.mean().item():.4f}",

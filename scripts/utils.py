@@ -39,7 +39,7 @@ def print_compute_c_metrics(metrics: ComputeCMetrics):
 
 def print_compute_v_delta_metrics(metrics: ComputeVDeltaMetrics):
     print(", ".join([
-        f"step={metrics.step}",
+        f"step={metrics.processed_steps_num}",
         f"loss={metrics.loss.item():.4f}",
         f"rewriting_acc={metrics.rewriting_acc.mean().item():.4f}",
         f"rewriting_loss={metrics.rewriting_loss.item():.4f}",
