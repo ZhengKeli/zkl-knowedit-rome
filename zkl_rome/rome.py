@@ -3,6 +3,8 @@ from typing import Iterable, Literal
 
 import numpy as np
 import torch
+from datasets import load_dataset
+from tqdm import tqdm
 from transformers import PreTrainedModel, PreTrainedTokenizer
 
 from .apply_left_right import apply_left_right
@@ -173,7 +175,6 @@ class WikipediaComputeCSamples(Iterable[str | np.ndarray]):
         self.tokenizer = tokenizer
 
     def __iter__(self):
-        from datasets import load_dataset
         dataset = load_dataset(
             self.path,
             self.name,
@@ -190,11 +191,9 @@ class WikipediaComputeCSamples(Iterable[str | np.ndarray]):
 
 class TqdmComputeCCallback(ComputeCCallback):
     def __init__(self):
-        from tqdm import tqdm
         self.progressbar: tqdm | None = None
 
     def on_start(self, hparams: ComputeCHparams):
-        from tqdm import tqdm
         self.progressbar = tqdm(
             desc="Computing c",
             total=hparams.stopping_tokens_num)
@@ -208,11 +207,9 @@ class TqdmComputeCCallback(ComputeCCallback):
 
 class TqdmComputeVDeltaCallback(ComputeVDeltaCallback):
     def __init__(self):
-        from tqdm import tqdm
         self.progressbar: tqdm | None = None
 
     def on_start(self, hparams: ComputeVDeltaHparams):
-        from tqdm import tqdm
         self.progressbar = tqdm(
             desc="Computing v_delta",
             total=hparams.stopping_steps_num)
