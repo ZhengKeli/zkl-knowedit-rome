@@ -17,13 +17,13 @@ from .rewriting import TokenizedRewriting
 class ComputeVDeltaHparams:
     learning_rate: float
 
-    stopping_steps_num: int | None = 100
-    stopping_loss_threshold: float | None = 5e-2
-
     rewriting_loss_k: float = 1.0
     preserving_loss_k: float = 1.0
     regularization_loss_k: float = 0.0
     regularization_constraint_factor: float | None = None
+
+    stopping_steps_num: int | None = 100
+    stopping_loss_threshold: float | None = 5e-2
 
 
 @dataclass(kw_only=True)
