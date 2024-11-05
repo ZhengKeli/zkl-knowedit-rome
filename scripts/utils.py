@@ -34,7 +34,7 @@ def generate_text(model: PreTrainedModel, tokenizer: PreTrainedTokenizer, prompt
 
 
 def print_compute_c_metrics(metrics: ComputeCMetrics):
-    print(f"tokens={metrics.tokens}")
+    print(f"tokens={metrics.processed_tokens_num}")
 
 
 def print_compute_v_delta_metrics(metrics: ComputeVDeltaMetrics):

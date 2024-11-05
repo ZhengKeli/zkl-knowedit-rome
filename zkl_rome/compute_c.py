@@ -12,14 +12,14 @@ from .hooks import StopForward, forward_input_hook
 
 @dataclass(kw_only=True)
 class ComputeCHparams:
-    total_tokens_num: int | None = None
     batch_samples_num: int
     context_tokens_num: int
+    stopping_tokens_num: int | None = None
 
 
 @dataclass(kw_only=True)
 class ComputeCMetrics:
-    tokens: int
+    processed_tokens_num: int
 
 
 class ComputeCCallback(abc.ABC):
@@ -55,8 +55,8 @@ def compute_c(*,
     c_num = 0
     metrics = None
     for batch_tokens, batch_masks in iterator:
-        if hparams.total_tokens_num is not None:
-            if c_num >= hparams.total_tokens_num:
+        if hparams.stopping_tokens_num is not None:
+            if c_num >= hparams.stopping_tokens_num:
                 break
 
         def hook(_, inputs):
@@ -77,7 +77,7 @@ def compute_c(*,
             c_num += n
 
             if callback is not None:
-                metrics = ComputeCMetrics(tokens=c_num)
+                metrics = ComputeCMetrics(processed_tokens_num=c_num)
                 callback.on_batch(metrics)
 
             raise StopForward

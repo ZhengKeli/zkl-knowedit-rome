@@ -31,9 +31,9 @@ generate_prefixes_hparams = GeneratePrefixesHparams(
     num_sequences=20)
 
 compute_c_hparams = ComputeCHparams(
-    total_tokens_num=int(1e6),
     batch_samples_num=4,
-    context_tokens_num=256)
+    context_tokens_num=256,
+    stopping_tokens_num=int(1e6))
 
 compute_v_delta_hparams = ComputeVDeltaHparams(
     learning_rate=5e-1,

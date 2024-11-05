@@ -162,10 +162,10 @@ class TqdmComputeCCallback(ComputeCCallback):
         from tqdm import tqdm
         self.progressbar = tqdm(
             desc="Computing c",
-            total=hparams.total_tokens_num)
+            total=hparams.stopping_tokens_num)
 
     def on_batch(self, metrics: ComputeCMetrics):
-        self.progressbar.update(metrics.tokens - self.progressbar.n)
+        self.progressbar.update(metrics.processed_tokens_num - self.progressbar.n)
 
     def on_stop(self, metrics: ComputeCMetrics):
         self.progressbar.close()
