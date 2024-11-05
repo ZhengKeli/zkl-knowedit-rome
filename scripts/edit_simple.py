@@ -7,8 +7,8 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 project_dir_path = os.path.join(os.path.dirname(__file__), "..")
 sys.path.append(project_dir_path)
 
-from scripts.utils import generate_text, iter_compute_c_samples_from_wikipedia
-from zkl_rome import ComputeVDeltaHparams, TextRewriting, rome
+from scripts.utils import generate_text
+from zkl_rome import ComputeCHparams, ComputeVDeltaHparams, TextRewriting, WikipediaComputeCSamples, rome
 
 # config
 
@@ -30,6 +30,11 @@ inspecting_prompts = [
     "Steve Jobs worked for",
     "Steve Jobs was the founder of",
 ]
+
+compute_c_hparams = ComputeCHparams(
+    batch_samples_num=4,
+    context_tokens_num=256,
+    stopping_tokens_num=int(1e6))
 
 compute_v_delta_hparams = ComputeVDeltaHparams(
     learning_rate=5e-1,
@@ -58,7 +63,8 @@ rome(
     tokenizer=tokenizer,
     module_name=module_name,
     rewriting=rewriting,
-    compute_c_samples=iter_compute_c_samples_from_wikipedia(),
+    compute_c_samples=WikipediaComputeCSamples(),
+    compute_c_hparams=compute_c_hparams,
     cache_c_inv_file_path=cache_c_inv_file_path,
     compute_v_delta_hparams=compute_v_delta_hparams)
 

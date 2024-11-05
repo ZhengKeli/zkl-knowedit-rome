@@ -7,10 +7,10 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 project_dir_path = os.path.join(os.path.dirname(__file__), "..")
 sys.path.append(project_dir_path)
 
-from scripts.utils import generate_text, iter_compute_c_samples_from_wikipedia
+from scripts.utils import generate_text
 from zkl_rome import ComputeCHparams, ComputeVDeltaHparams, GeneratePrefixesHparams, TextRewriting, \
-    TqdmComputeCCallback, TqdmComputeVDeltaCallback, apply_left_right, compute_left_right, generate_prefixes, \
-    generate_preservings_by_default, load_or_compute_c_inv
+    TqdmComputeCCallback, TqdmComputeVDeltaCallback, WikipediaComputeCSamples, apply_left_right, compute_left_right, \
+    generate_prefixes, generate_preservings_by_default, load_or_compute_c_inv
 
 # config
 
@@ -73,7 +73,7 @@ preservings = generate_preservings_by_default(tokenizer, rewriting)
 c_inv = load_or_compute_c_inv(
     model=model,
     module=module,
-    compute_c_samples=iter_compute_c_samples_from_wikipedia(tokenizer),
+    compute_c_samples=WikipediaComputeCSamples(tokenizer=tokenizer),
     compute_c_hparams=compute_c_hparams,
     compute_c_callback=TqdmComputeCCallback(),
     cache_c_inv_file_path=cache_c_inv_file_path)

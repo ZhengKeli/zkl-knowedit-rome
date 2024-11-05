@@ -8,10 +8,10 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 project_dir_path = os.path.join(os.path.dirname(__file__), "..")
 sys.path.append(project_dir_path)
 
-from scripts.utils import compute_cosine_similarity, iter_compute_c_samples_from_wikipedia
+from scripts.utils import compute_cosine_similarity
 from zkl_rome import ComputeCHparams, ComputeVDeltaHparams, GeneratePrefixesHparams, TextRewriting, \
-    TqdmComputeCCallback, TqdmComputeVDeltaCallback, compute_c, compute_left_right, generate_prefixes, \
-    generate_preservings_by_default
+    TqdmComputeCCallback, TqdmComputeVDeltaCallback, WikipediaComputeCSamples, compute_c, compute_left_right, \
+    generate_prefixes, generate_preservings_by_default
 
 # config
 
@@ -66,7 +66,7 @@ preservings = generate_preservings_by_default(tokenizer, rewriting)
 c = compute_c(
     model=model,
     module=module,
-    samples=iter_compute_c_samples_from_wikipedia(tokenizer),
+    samples=WikipediaComputeCSamples(tokenizer=tokenizer),
     hparams=compute_c_hparams,
     callback=TqdmComputeCCallback())
 c_inv = torch.inverse(c)
