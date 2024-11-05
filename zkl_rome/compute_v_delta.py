@@ -38,7 +38,7 @@ class ComputeVDeltaMetrics:
 
 class ComputeVDeltaCallback(abc.ABC):
     @abc.abstractmethod
-    def on_start(self):
+    def on_start(self, hparams: ComputeVDeltaHparams):
         pass
 
     @abc.abstractmethod
@@ -105,7 +105,7 @@ def compute_v_delta(*,
 
     # Call callback
     if callback is not None:
-        callback.on_start()
+        callback.on_start(hparams)
 
     # Execute optimization
     metrics = None
