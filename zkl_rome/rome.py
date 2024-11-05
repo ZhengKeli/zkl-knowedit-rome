@@ -9,7 +9,7 @@ from .apply_left_right import apply_left_right
 from .compute_c import ComputeCCallback, ComputeCHparams, ComputeCMetrics
 from .compute_c_inv import compute_c_inv
 from .compute_left_right import compute_left_right
-from .compute_v_delta import ComputeVDeltaCallback, ComputeVDeltaHparams
+from .compute_v_delta import ComputeVDeltaCallback, ComputeVDeltaHparams, ComputeVDeltaMetrics
 from .generate_prefixes import GeneratePrefixesHparams, generate_prefixes
 from .preserving import TextPreserving, TokenizedPreserving
 from .rewriting import TextRewriting, TokenizedRewriting
@@ -168,4 +168,28 @@ class TqdmComputeCCallback(ComputeCCallback):
         self.progressbar.update(metrics.tokens - self.progressbar.n)
 
     def on_stop(self, metrics: ComputeCMetrics):
+        self.progressbar.close()
+
+
+class TqdmComputeVDeltaCallback(ComputeVDeltaCallback):
+    def __init__(self):
+        from tqdm import tqdm
+        self.progressbar: tqdm | None = None
+
+    def on_start(self, hparams: ComputeVDeltaHparams):
+        from tqdm import tqdm
+        self.progressbar = tqdm(
+            desc="Computing v_delta",
+            total=hparams.stopping_steps_num)
+
+    def on_step(self, metrics: ComputeVDeltaMetrics):
+        self.progressbar.update(metrics.step - self.progressbar.n)
+        self.progressbar.set_postfix_str(", ".join([
+            f"loss={metrics.loss.item():.4f}",
+            f"rewriting_acc={metrics.rewriting_acc.mean().item():.4f}",
+            f"rewriting_loss={metrics.rewriting_loss.item():.4f}",
+            f"preserving_loss={metrics.preserving_loss.item():.4f}",
+            f"regularization_loss={metrics.regularization_loss.item():.4f}"]))
+
+    def on_stop(self, metrics: ComputeVDeltaMetrics):
         self.progressbar.close()
