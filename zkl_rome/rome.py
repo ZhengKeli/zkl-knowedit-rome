@@ -1,5 +1,5 @@
 import os
-from typing import Callable, Iterable
+from typing import Callable, Iterable, Literal
 
 import numpy as np
 import torch
@@ -25,10 +25,10 @@ def rome(*,
     preservings: Iterable[TextPreserving | TokenizedPreserving] | None = None,
     compute_c_samples: Iterable[str | np.ndarray] | Callable[[], Iterable[str | np.ndarray]] | None = None,
     compute_c_hparams: ComputeCHparams | None = None,
-    compute_c_callback: ComputeCCallback | None = None,
+    compute_c_callback: ComputeCCallback | Literal['tqdm'] | None = 'tqdm',
     cache_c_inv_file_path: os.PathLike | str | None = None,
     compute_v_delta_hparams: ComputeVDeltaHparams,
-    compute_v_delta_callback: ComputeVDeltaCallback | None = None,
+    compute_v_delta_callback: ComputeVDeltaCallback | Literal['tqdm'] | None = 'tqdm',
 ) -> tuple[torch.Tensor, torch.Tensor]:
     if isinstance(rewriting, TextRewriting):
         rewriting = rewriting.tokenize(tokenizer)
@@ -66,6 +66,14 @@ def rome(*,
             compute_c_samples = lambda: map(tokenize, compute_c_samples_callable())
         else:
             compute_c_samples = map(tokenize, compute_c_samples)
+
+    if compute_c_callback == 'tqdm':
+        compute_c_callback = TqdmComputeCCallback()
+    assert isinstance(compute_c_callback, ComputeCCallback | None)
+
+    if compute_v_delta_callback == 'tqdm':
+        compute_v_delta_callback = TqdmComputeVDeltaCallback()
+    assert isinstance(compute_v_delta_callback, ComputeVDeltaCallback | None)
 
     module = model.get_submodule(module_name)
 
