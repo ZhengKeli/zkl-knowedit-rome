@@ -77,6 +77,7 @@ def compute_c(*,
             c_num += n
 
             if callback is not None:
+                nonlocal metrics
                 metrics = ComputeCMetrics(processed_tokens_num=c_num)
                 callback.on_batch(metrics)
 
