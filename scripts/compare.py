@@ -39,11 +39,11 @@ compute_v_delta_hparams = ComputeVDeltaHparams(
     regularization_loss_k=0.5,
     regularization_constraint_factor=3.0)
 
-c_org_path = os.path.join(project_dir_path, "../original-rome/c.npy")
-c_inv_org_path = os.path.join(project_dir_path, "../original-rome/c_inv.npy")
-left_org_path = os.path.join(project_dir_path, "../original-rome/left.npy")
-right_org_path = os.path.join(project_dir_path, "../original-rome/right.npy")
-w_delta_org_path = os.path.join(project_dir_path, "../original-rome/w_delta.npy")
+c_org_path = os.path.join(project_dir_path, "original/c.npy")
+c_inv_org_path = os.path.join(project_dir_path, "original/c_inv.npy")
+left_org_path = os.path.join(project_dir_path, "original/left.npy")
+right_org_path = os.path.join(project_dir_path, "original/right.npy")
+w_delta_org_path = os.path.join(project_dir_path, "original/w_delta.npy")
 
 # execution
 
