@@ -97,11 +97,15 @@ We accepted some differences for efficiency and engineering reasons,
 which leads to the fact that they are not fully equivalent.
 
 Nevertheless, we've been keeping track of them and focused on how big the difference is.
-We kept track of the cosine similarity of key intermediates of the algorithm.
+We kept track of the cosine similarity of serval key intermediates of the algorithm.
+The script [scripts/compare.py](scripts/compare.py) can perform the comparison.
 
-There is results of the comparison:
+Here is a typical comparison result:
 
 ```text
+model_name = "gpt2-medium"
+module_name = "transformer.h.8.mlp.c_proj"
+
 prompt="Steve Jobs is the founder of"
 subject="Steve Jobs"
 target=" Microsoft"
@@ -115,5 +119,4 @@ w_delta_sim=0.8496803641319275
 
 With `w_delta_sim=0.85` we can say that this implementation is "very close" to the original one.
 
-The comparison is performed by [scripts/compare.py](scripts/compare.py).
-If it concerns, you can run your own comparison with other configurations.
+You may run your own comparison with different configurations if you are concerned about it.
