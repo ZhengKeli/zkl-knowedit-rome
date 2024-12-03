@@ -1,6 +1,6 @@
 [project]
 name = "zkl-rome"
-version = "0.4.0"
+version = "0.4.1"
 readme = "README.md"
 description = "A reimplementation of ROME with better engineering."
 authors = [{ name = "Keli Zheng", email = "zhengkeli2009@126.com" }]
